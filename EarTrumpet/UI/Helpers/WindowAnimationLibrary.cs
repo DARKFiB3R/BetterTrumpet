@@ -30,6 +30,24 @@ namespace EarTrumpet.UI.Helpers
         const int _staggerMaxItems = 24; // cap so a huge app list can't make the tail crawl in
 
         /// <summary>
+        /// Shows the flyout without the scale "pop" — just uncloak + foreground/focus. Used
+        /// when re-opening after an expand/collapse, where the whole-window pop feels wrong
+        /// and the staggered row cascade should carry the transition instead.
+        /// </summary>
+        public static void BeginFlyoutInstantShow(Window window, WindowsTaskbar.State taskbar, Action completed)
+        {
+            window.Topmost = false;
+            window.Activate();
+            BringTaskbarToFront();
+            window.Opacity = 1;
+            window.Cloak(false);
+            window.Topmost = true;
+            window.Focus();
+            User32.SetForegroundWindow(window.GetHandle());
+            completed();
+        }
+
+        /// <summary>
         /// Reveals rows one-by-one with a short, growing delay (fade + slide-up), producing
         /// the cascade effect on open. Pass the rows in visual (top-to-bottom) order. No-op
         /// when animations are disabled. Each row gets its own TranslateTransform that is

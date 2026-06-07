@@ -21,6 +21,9 @@ namespace EarTrumpet.UI.ViewModels
         public ModalDialogViewModel Dialog { get; }
         public bool IsExpanded { get; private set; }
         public bool IsExpandingOrCollapsing { get; private set; }
+        // True for exactly one open cycle when that open was triggered by expand/collapse,
+        // so the view can play a lighter reveal (cascade only, no full-window pop).
+        public bool IsReopeningFromExpand { get; set; }
         public bool CanExpand => _mainViewModel.VisibleDevices.Count > 1;
         public string DeviceNameText => Devices.Count > 0 ? Devices[0].DisplayName : null;
         public FlyoutViewState State { get; private set; }
@@ -426,6 +429,9 @@ private readonly Action _returnFocusToTray;
                     if (IsExpandingOrCollapsing)
                     {
                         IsExpandingOrCollapsing = false;
+                        // Mark the upcoming open as expand-triggered so the view can use a
+                        // lighter reveal (no full-window pop) — only this re-open, then reset.
+                        IsReopeningFromExpand = true;
                         DoExpandCollapse();
                         BeginOpen(LastInput);
                     }

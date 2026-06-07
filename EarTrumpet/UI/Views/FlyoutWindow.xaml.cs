@@ -82,11 +82,32 @@ namespace EarTrumpet.UI.Views
 // Focus the first device if available.
                     DevicesList.FindVisualChild<DeviceView>()?.FocusAndRemoveFocusVisual();
 
-                    // Start animation immediately for snappy feel
-                    WindowAnimationLibrary.BeginFlyoutScaleEntranceAnimation(this, LayoutRoot, taskbar, () =>
+                    // Was this open triggered by expand/collapse? If so, use a lighter reveal:
+                    // skip the full-window "pop" (which feels wrong when only the list changed)
+                    // and let the staggered row cascade carry the transition.
+                    var fvmExpand = _viewModel as FlyoutViewModel;
+                    bool fromExpand = fvmExpand != null && fvmExpand.IsReopeningFromExpand;
+                    if (fvmExpand != null)
                     {
-                        _viewModel.ChangeState(FlyoutViewState.Open);
-                    });
+                        fvmExpand.IsReopeningFromExpand = false;
+                    }
+
+                    if (fromExpand)
+                    {
+                        // No window scale; just show + foreground, cascade does the rest.
+                        WindowAnimationLibrary.BeginFlyoutInstantShow(this, taskbar, () =>
+                        {
+                            _viewModel.ChangeState(FlyoutViewState.Open);
+                        });
+                    }
+                    else
+                    {
+                        // Start animation immediately for snappy feel
+                        WindowAnimationLibrary.BeginFlyoutScaleEntranceAnimation(this, LayoutRoot, taskbar, () =>
+                        {
+                            _viewModel.ChangeState(FlyoutViewState.Open);
+                        });
+                    }
 
                     // Cascade the rows in (device headers + app rows) over the entrance.
                     var rows = new List<FrameworkElement>();
