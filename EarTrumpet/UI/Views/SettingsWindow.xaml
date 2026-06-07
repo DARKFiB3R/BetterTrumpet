@@ -77,11 +77,13 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Section card style -->
+        <!-- Section card style. Includes the themed background so every section
+             card is declared in one place. -->
         <Style x:Key="SectionCardBorder" TargetType="Border">
             <Setter Property="Margin" Value="0,0,0,20"/>
             <Setter Property="Padding" Value="20"/>
             <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Theme:Brush.Background" Value="Theme={Theme}ListLow, HighContrast=Window"/>
         </Style>
 
         <!-- Section icon style -->
@@ -96,12 +98,10 @@
             <StackPanel Orientation="Vertical" Margin="0,0,16,0">
 
                 <!-- Hotkey card: Open Flyout -->
-                <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                        Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                <Border Style="{StaticResource SectionCardBorder}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                            <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                    Background="#15FFFFFF">
+                            <Border Style="{StaticResource SectionIconBorder}">
                                 <TextBlock Text="&#xE767;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Foreground="White" />
@@ -118,12 +118,10 @@
                 </Border>
 
                 <!-- Hotkey card: Open Mixer -->
-                <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                        Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                <Border Style="{StaticResource SectionCardBorder}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                            <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                    Background="#15FFFFFF">
+                            <Border Style="{StaticResource SectionIconBorder}">
                                 <TextBlock Text="&#xE9E9;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Foreground="White" />
@@ -140,12 +138,10 @@
                 </Border>
 
                 <!-- Hotkey card: Open Settings -->
-                <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                        Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                <Border Style="{StaticResource SectionCardBorder}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                            <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                    Background="#15FFFFFF">
+                            <Border Style="{StaticResource SectionIconBorder}">
                                 <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Foreground="White" />
@@ -162,12 +158,10 @@
                 </Border>
 
                 <!-- Hotkey card: Volume Up/Down -->
-                <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                        Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                <Border Style="{StaticResource SectionCardBorder}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                            <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                    Background="#15FFFFFF">
+                            <Border Style="{StaticResource SectionIconBorder}">
                                 <TextBlock Text="&#xE767;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Foreground="White" />
@@ -190,12 +184,10 @@
                 </Border>
 
                 <!-- Hotkey card: Switch Default Device -->
-                <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                        Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                <Border Style="{StaticResource SectionCardBorder}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                            <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                    Background="#15FFFFFF">
+                            <Border Style="{StaticResource SectionIconBorder}">
                                 <TextBlock Text="&#xE8AB;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Foreground="White" />
@@ -216,12 +208,10 @@
         <DataTemplate DataType="{x:Type vm:EarTrumpetMouseSettingsPageViewModel}">
             <StackPanel Orientation="Vertical" Margin="0,0,16,0">
 
-                <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                        Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                <Border Style="{StaticResource SectionCardBorder}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                            <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                    Background="#15FFFFFF">
+                            <Border Style="{StaticResource SectionIconBorder}">
                                 <TextBlock Text="&#xE962;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Foreground="White" />
@@ -245,12 +235,10 @@
                 </Border>
 
                 <!-- Volume scaling (moved here from the former "Community" page) -->
-                <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                        Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                <Border Style="{StaticResource SectionCardBorder}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                            <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                    Background="#15FFFFFF">
+                            <Border Style="{StaticResource SectionIconBorder}">
                                 <TextBlock Text="&#xE9E9;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Foreground="White" />
@@ -277,12 +265,10 @@
         <DataTemplate DataType="{x:Type vm:EarTrumpetCommunitySettingsPageViewModel}">
             <StackPanel Orientation="Vertical" Margin="0,0,16,0">
 
-                <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                        Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                <Border Style="{StaticResource SectionCardBorder}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                            <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                    Background="#15FFFFFF">
+                            <Border Style="{StaticResource SectionIconBorder}">
                                 <TextBlock Text="&#xE9E9;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Foreground="White" />
@@ -311,12 +297,10 @@
             <StackPanel Orientation="Vertical" Margin="0,0,16,0">
 
                     <!-- SECTION: Battery Optimization -->
-                    <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                            Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                    <Border Style="{StaticResource SectionCardBorder}">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                        Background="#15FFFFFF">
+                                <Border Style="{StaticResource SectionIconBorder}">
                                     <TextBlock Text="&#xEA94;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                                Foreground="White" />
@@ -335,7 +319,7 @@
                                       IsChecked="{Binding AutoEcoMode, Mode=TwoWay}" Margin="0,0,0,14"
                                       ToolTip="{x:Static resx:Resources.SettingsAutoEcoModeTip}" />
 
-                            <Border Padding="10,8" CornerRadius="6" Background="#15FFFFFF">
+                            <Border Padding="10,8" CornerRadius="6" Background="{StaticResource PanelBackgroundBrush}">
                                 <TextBlock Style="{StaticResource BodySubText}" FontSize="12">
                                     <Run Text="{x:Static resx:Resources.SettingsCurrentRefreshRate}" />
                                     <Run Text="{Binding EffectiveFpsText, Mode=OneWay}" FontWeight="SemiBold"
@@ -346,12 +330,10 @@
                     </Border>
 
                     <!-- SECTION: Animations -->
-                    <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                            Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                    <Border Style="{StaticResource SectionCardBorder}">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                        Background="#15FFFFFF">
+                                <Border Style="{StaticResource SectionIconBorder}">
                                     <TextBlock Text="&#xE916;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                                Foreground="White" />
@@ -389,12 +371,10 @@
                     </Border>
 
                     <!-- SECTION: Peak Meter -->
-                    <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                            Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                    <Border Style="{StaticResource SectionCardBorder}">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                        Background="#15FFFFFF">
+                                <Border Style="{StaticResource SectionIconBorder}">
                                     <TextBlock Text="&#xE9E9;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                                Foreground="White" />
@@ -425,8 +405,8 @@
 
                             <!-- Segmented Control for FPS -->
                             <TextBlock Text="{x:Static resx:Resources.SettingsRefreshRate}" FontSize="13" Margin="0,0,0,10" />
-                            <Border CornerRadius="8" Background="#08FFFFFF" Padding="3"
-                                    BorderBrush="#15FFFFFF" BorderThickness="1">
+                            <Border CornerRadius="8" Background="{StaticResource ListItemBackgroundBrush}" Padding="3"
+                                    BorderBrush="{StaticResource PanelBackgroundBrush}" BorderThickness="1">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -541,8 +521,7 @@
                             Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                        Background="{StaticResource PanelBackgroundBrush}">
+                                <Border Style="{StaticResource SectionIconBorder}">
                                     <TextBlock Text="&#xE9E9;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                                Foreground="White" />
@@ -558,8 +537,8 @@
                                                Style="{StaticResource BodySubText}" FontSize="12" />
                                 </StackPanel>
                             </StackPanel>
-                            <Border CornerRadius="8" Background="#08FFFFFF" Padding="3"
-                                    BorderBrush="#15FFFFFF" BorderThickness="1">
+                            <Border CornerRadius="8" Background="{StaticResource ListItemBackgroundBrush}" Padding="3"
+                                    BorderBrush="{StaticResource PanelBackgroundBrush}" BorderThickness="1">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -727,8 +706,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                    Background="{StaticResource PanelBackgroundBrush}">
+                            <Border Grid.Column="0" Style="{StaticResource SectionIconBorder}">
                                 <TextBlock Text="&#xE790;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Foreground="White" />
@@ -747,7 +725,7 @@
                     <!-- SEGMENTED TAB BAR: [Dynamic] [Presets] [Custom]     -->
                     <!-- ═══════════════════════════════════════════════════ -->
                     <Border Margin="0,0,0,16" CornerRadius="8" Padding="3"
-                            Background="#08FFFFFF" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                            Background="{StaticResource ListItemBackgroundBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -829,8 +807,7 @@
                     <!-- ═══════════════════════════════════════════════════ -->
                     <!-- HERO PREVIEW: Always visible large slider preview  -->
                     <!-- ═══════════════════════════════════════════════════ -->
-                    <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                            Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                    <Border Style="{StaticResource SectionCardBorder}">
                         <StackPanel>
                             <Grid Margin="0,0,0,12">
                                 <Grid.ColumnDefinitions>
@@ -1028,10 +1005,9 @@
                     <!-- ═══════════════════════════════════════════════════ -->
                     <!-- TAB 0: DYNAMIC — Album Art Theme                   -->
                     <!-- ═══════════════════════════════════════════════════ -->
-                    <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                            Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                    <Border>
                         <Border.Style>
-                            <Style TargetType="Border">
+                            <Style TargetType="Border" BasedOn="{StaticResource SectionCardBorder}">
                                 <Setter Property="Visibility" Value="Collapsed" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding SelectedTab}" Value="0">
@@ -1042,8 +1018,7 @@
                         </Border.Style>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                        Background="{StaticResource PanelBackgroundBrush}">
+                                <Border Style="{StaticResource SectionIconBorder}">
                                     <TextBlock Text="&#xE8D6;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                                Foreground="White" />
@@ -1072,10 +1047,9 @@
                     <!-- ═══════════════════════════════════════════════════ -->
                     <!-- TAB 1: PRESETS — Visual Theme Grid (2 columns)     -->
                     <!-- ═══════════════════════════════════════════════════ -->
-                    <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                            Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                    <Border>
                         <Border.Style>
-                            <Style TargetType="Border">
+                            <Style TargetType="Border" BasedOn="{StaticResource SectionCardBorder}">
                                 <Setter Property="Visibility" Value="Collapsed" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding SelectedTab}" Value="1">
@@ -1311,12 +1285,10 @@
                         </StackPanel.Style>
 
                         <!-- Color Swatches Card -->
-                        <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                                Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                        <Border Style="{StaticResource SectionCardBorder}">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                                    <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                            Background="{StaticResource PanelBackgroundBrush}">
+                                    <Border Style="{StaticResource SectionIconBorder}">
                                         <TextBlock Text="&#xE2B1;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                                    Foreground="White" />
@@ -1554,8 +1526,7 @@
                         </Border>
 
                         <!-- My Themes Card -->
-                        <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                                Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                        <Border Style="{StaticResource SectionCardBorder}">
                             <StackPanel>
                                 <!-- Header with overflow menu -->
                                 <Grid Margin="0,0,0,14">
@@ -1565,8 +1536,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                        <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                                Background="{StaticResource PanelBackgroundBrush}">
+                                        <Border Style="{StaticResource SectionIconBorder}">
                                             <TextBlock Text="&#xE1F6;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center"
                                                        Foreground="White" />
@@ -1640,7 +1610,7 @@
                                                     </StackPanel>
                                                 </Border>
                                                 <!-- Separator -->
-                                                <Border Height="1" Background="#15FFFFFF" Margin="8,3" />
+                                                <Border Height="1" Background="{StaticResource PanelBackgroundBrush}" Margin="8,3" />
                                                 <!-- Export .bttheme -->
                                                 <Border Height="34" CornerRadius="4" Cursor="Hand" Margin="2"
                                                         MouseLeftButtonDown="ExportThemeToFile_Click">
@@ -1825,12 +1795,10 @@
             <StackPanel Orientation="Vertical" Margin="0,0,16,0">
 
                 <!-- Startup -->
-                <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                        Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                <Border Style="{StaticResource SectionCardBorder}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                            <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                    Background="#15FFFFFF">
+                            <Border Style="{StaticResource SectionIconBorder}">
                                 <TextBlock Text="&#xE7E8;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Foreground="White" />
@@ -1849,12 +1817,10 @@
                 </Border>
 
                 <!-- Tray Icon -->
-                <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                        Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                <Border Style="{StaticResource SectionCardBorder}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                            <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                    Background="#15FFFFFF">
+                            <Border Style="{StaticResource SectionIconBorder}">
                                 <TextBlock Text="&#xE825;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Foreground="White" />
@@ -1878,12 +1844,10 @@
                 </Border>
 
                 <!-- Hidden app entries -->
-                <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                        Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                <Border Style="{StaticResource SectionCardBorder}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                            <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                    Background="#15FFFFFF">
+                            <Border Style="{StaticResource SectionIconBorder}">
                                 <TextBlock Text="&#xE738;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Foreground="White" />
@@ -1952,12 +1916,10 @@
             <StackPanel Orientation="Vertical" Margin="0,0,16,0">
 
                     <!-- SECTION: Enable Media Popup -->
-                    <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                            Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                    <Border Style="{StaticResource SectionCardBorder}">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                        Background="#15FFFFFF">
+                                <Border Style="{StaticResource SectionIconBorder}">
                                     <TextBlock Text="&#xE8D6;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                                Foreground="White" />
@@ -1975,13 +1937,11 @@
                     </Border>
 
                     <!-- SECTION: Interaction (merged Timing + Behavior) -->
-                    <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                            Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window"
+                    <Border Style="{StaticResource SectionCardBorder}"
                             IsEnabled="{Binding MediaPopupEnabled}">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                                <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                        Background="#15FFFFFF">
+                                <Border Style="{StaticResource SectionIconBorder}">
                                     <TextBlock Text="&#xE916;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                                Foreground="White" />
@@ -2009,7 +1969,7 @@
                                         SmallChange="0.01" LargeChange="0.1" IsSnapToTickEnabled="False" />
                                 <TextBlock Grid.Column="2" Text="5s" Style="{StaticResource BodySubText}"
                                            VerticalAlignment="Center" Margin="12,0,0,0" />
-                                <Border Grid.Column="3" Padding="8,4" CornerRadius="6" Background="#20FFFFFF"
+                                <Border Grid.Column="3" Padding="8,4" CornerRadius="6" Background="{StaticResource BorderSubtleBrush}"
                                         HorizontalAlignment="Right" Margin="12,0,0,0">
                                     <TextBlock Text="{Binding HoverDelayText}" FontWeight="SemiBold"
                                                HorizontalAlignment="Center" FontSize="13" />
@@ -2028,13 +1988,11 @@
                     </Border>
 
                     <!-- SECTION: Visual Effects + Preview -->
-                    <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                            Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window"
+                    <Border Style="{StaticResource SectionCardBorder}"
                             IsEnabled="{Binding MediaPopupEnabled}">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                                <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                        Background="#15FFFFFF">
+                                <Border Style="{StaticResource SectionIconBorder}">
                                     <TextBlock Text="&#xE81C;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                                Foreground="White" />
@@ -2048,7 +2006,7 @@
 
                             <!-- Live preview of blur effect -->
                             <Border CornerRadius="8" Height="80" Margin="0,0,0,16"
-                                    ClipToBounds="True" Background="#20FFFFFF">
+                                    ClipToBounds="True" Background="{StaticResource BorderSubtleBrush}">
                                 <Grid>
                                     <!-- Simulated album art background with blur -->
                                     <Border CornerRadius="8">
@@ -2088,7 +2046,7 @@
                                         SmallChange="1" LargeChange="5" IsSnapToTickEnabled="False" />
                                 <TextBlock Grid.Column="2" Text="{x:Static resx:Resources.SettingsBlurMax}" Style="{StaticResource BodySubText}"
                                            VerticalAlignment="Center" Margin="12,0,0,0" />
-                                <Border Grid.Column="3" Padding="8,4" CornerRadius="6" Background="#20FFFFFF"
+                                <Border Grid.Column="3" Padding="8,4" CornerRadius="6" Background="{StaticResource BorderSubtleBrush}"
                                         HorizontalAlignment="Right" Margin="12,0,0,0">
                                     <TextBlock Text="{Binding BlurRadiusText}" FontWeight="SemiBold"
                                                HorizontalAlignment="Center" FontSize="13" />
@@ -2105,8 +2063,7 @@
             <StackPanel Orientation="Vertical" Margin="0,0,16,0">
 
                 <!-- SECTION: Save Current Volumes -->
-                <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                        Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                <Border Style="{StaticResource SectionCardBorder}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                             <Border Style="{StaticResource SectionIconBorder}">
@@ -2143,7 +2100,7 @@
                                 </TextBox.Style>
                             </TextBox>
                             <Border Grid.Column="1" Height="32" Margin="8,0,0,0" CornerRadius="6" Cursor="Hand" Padding="16,0"
-                                    Background="#20FFFFFF" BorderThickness="1" BorderBrush="#30FFFFFF"
+                                    Background="{StaticResource BorderSubtleBrush}" BorderThickness="1" BorderBrush="#30FFFFFF"
                                     MouseLeftButtonDown="SaveProfile_Click">
                                 <Border.Style>
                                     <Style TargetType="Border">
@@ -2173,8 +2130,7 @@
                 </Border>
 
                 <!-- SECTION: Saved Profiles -->
-                <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                        Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                <Border Style="{StaticResource SectionCardBorder}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                             <Border Style="{StaticResource SectionIconBorder}">
@@ -2352,18 +2308,16 @@
         <DataTemplate DataType="{x:Type vm:EarTrumpetUpdatesPageViewModel}">
             <StackPanel Orientation="Vertical" Margin="0,0,16,0">
                 <!-- Update notifications card -->
-                <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                        Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                <Border Style="{StaticResource SectionCardBorder}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                            <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                    Background="#15FFFFFF">
+                            <Border Style="{StaticResource SectionIconBorder}">
                                 <TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Foreground="White" />
                             </Border>
                             <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="{x:Static resx:Resources.SettingsUpdates}" FontSize="14" FontWeight="SemiBold" />
+                                <TextBlock Text="{x:Static resx:Resources.SettingsUpdates}" FontSize="15" FontWeight="SemiBold" />
                                 <TextBlock Text="{x:Static resx:Resources.SettingsUpdatesDesc}"
                                            Style="{StaticResource BodySubText}" FontSize="12" />
                             </StackPanel>
@@ -2371,8 +2325,8 @@
 
                         <!-- Channel selector — segmented control -->
                         <TextBlock Text="{x:Static resx:Resources.SettingsNotifyFor}" FontSize="12" Margin="0,0,0,8" Opacity="0.7" />
-                        <Border CornerRadius="8" Background="#08FFFFFF" Padding="3"
-                                BorderBrush="#15FFFFFF" BorderThickness="1" Margin="0,0,0,6">
+                        <Border CornerRadius="8" Background="{StaticResource ListItemBackgroundBrush}" Padding="3"
+                                BorderBrush="{StaticResource PanelBackgroundBrush}" BorderThickness="1" Margin="0,0,0,6">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -2560,12 +2514,10 @@
             <StackPanel Orientation="Vertical" Margin="0,0,16,0">
 
                 <!-- Telemetry card -->
-                <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                        Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                <Border Style="{StaticResource SectionCardBorder}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                            <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                    Background="#15FFFFFF">
+                            <Border Style="{StaticResource SectionIconBorder}">
                                 <TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Foreground="White" />
@@ -2588,12 +2540,10 @@
                 </Border>
 
                 <!-- Export & Import settings card -->
-                <Border Margin="0,0,0,20" Padding="20" CornerRadius="10"
-                        Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                <Border Style="{StaticResource SectionCardBorder}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                            <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0"
-                                    Background="#15FFFFFF">
+                            <Border Style="{StaticResource SectionIconBorder}">
                                 <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="18"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Foreground="White" />
