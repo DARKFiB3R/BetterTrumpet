@@ -22,6 +22,11 @@ namespace EarTrumpet.UI.ViewModels
         private readonly Dictionary<string, object> _originalRefs = new Dictionary<string, object>();
         private bool _refsBackedUp = false;
 
+        // Opacity of the custom color when used as the flyout's ACRYLIC tint. High enough
+        // that the tint reads clearly over the blur, low enough to stay translucent
+        // (0.85 was fully opaque; 0.4 was too faint to see).
+        private const string FlyoutAcrylicTintOpacity = "0.7";
+
         // Default colors from shared registry
         private static readonly Color DefaultAccentColor = ThemeRegistry.DefaultAccentColor;
         private static readonly Color DefaultTrackBackground = ThemeRegistry.DefaultTrackBackground;
@@ -884,13 +889,10 @@ namespace EarTrumpet.UI.ViewModels
                 {
                     var bgHex = $"#{windowBg.R:X2}{windowBg.G:X2}{windowBg.B:X2}";
 
-                    // Override FlyoutBackground
-                    var flyoutBgRef = refs.FirstOrDefault(r => r.Key == "FlyoutBackground");
-                    if (flyoutBgRef != null)
-                    {
-                        flyoutBgRef.Value = bgHex;
-                        flyoutBgRef.Rules.Clear();
-                    }
+                    // FlyoutBackground (the CONTENT layer) is intentionally left untouched:
+                    // overriding it paints an opaque pane OVER the acrylic and kills the blur.
+                    // The flyout tint is applied via AcrylicColor_Flyout below instead, so the
+                    // custom color tints the acrylic material itself while staying translucent.
 
                     // Override Background
                     var bgRef = refs.FirstOrDefault(r => r.Key == "Background");
@@ -908,11 +910,13 @@ namespace EarTrumpet.UI.ViewModels
                         popupBgRef.Rules.Clear();
                     }
 
-                    // Override AcrylicColor_Flyout (tint for acrylic blur)
+                    // Tint the flyout ACRYLIC with the custom color, but keep it translucent.
+                    // The "/opacity" suffix is transparency-aware (full opacity is used only
+                    // when system transparency is off), so the acrylic blur stays visible.
                     var acrylicFlyoutRef = refs.FirstOrDefault(r => r.Key == "AcrylicColor_Flyout");
                     if (acrylicFlyoutRef != null)
                     {
-                        acrylicFlyoutRef.Value = $"{bgHex}/0.85";
+                        acrylicFlyoutRef.Value = $"{bgHex}/{FlyoutAcrylicTintOpacity}/1";
                         acrylicFlyoutRef.Rules.Clear();
                     }
 

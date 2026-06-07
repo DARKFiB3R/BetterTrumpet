@@ -4,6 +4,8 @@ using EarTrumpet.Interop.Helpers;
 using EarTrumpet.UI.Helpers;
 using EarTrumpet.UI.ViewModels;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using Forms = System.Windows.Forms;
@@ -81,10 +83,19 @@ namespace EarTrumpet.UI.Views
                     DevicesList.FindVisualChild<DeviceView>()?.FocusAndRemoveFocusVisual();
 
                     // Start animation immediately for snappy feel
-                    WindowAnimationLibrary.BeginFlyoutEntranceAnimation(this, taskbar, () =>
+                    WindowAnimationLibrary.BeginFlyoutScaleEntranceAnimation(this, LayoutRoot, taskbar, () =>
                     {
                         _viewModel.ChangeState(FlyoutViewState.Open);
                     });
+
+                    // Cascade the rows in (device headers + app rows) over the entrance.
+                    var rows = new List<FrameworkElement>();
+                    foreach (var device in DevicesList.FindVisualChildren<DeviceView>())
+                    {
+                        rows.Add(device);
+                        rows.AddRange(device.FindVisualChildren<AppItemView>());
+                    }
+                    WindowAnimationLibrary.BeginStaggeredRowReveal(rows);
                     break;
 
                 case FlyoutViewState.Closing_Stage1:

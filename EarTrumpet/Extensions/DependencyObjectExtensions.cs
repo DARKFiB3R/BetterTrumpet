@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Collections.Generic;
+using System.Windows;
 using System.Windows.Media;
 
 namespace EarTrumpet.Extensions
@@ -67,6 +68,36 @@ namespace EarTrumpet.Extensions
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        /// Enumerates every descendant of <paramref name="obj"/> of type T in visual
+        /// (top-to-bottom) order. Does not recurse into a match's own subtree, so e.g.
+        /// AppItemView rows are returned as flat siblings, not nested. Used to drive the
+        /// staggered open animation across device/app rows.
+        /// </summary>
+        public static IEnumerable<T> FindVisualChildren<T>(this DependencyObject obj) where T : DependencyObject
+        {
+            if (obj == null)
+            {
+                yield break;
+            }
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
+            {
+                var child = VisualTreeHelper.GetChild(obj, i);
+                if (child is T match)
+                {
+                    yield return match;
+                }
+                else
+                {
+                    foreach (var descendant in FindVisualChildren<T>(child))
+                    {
+                        yield return descendant;
+                    }
+                }
+            }
         }
     }
 }

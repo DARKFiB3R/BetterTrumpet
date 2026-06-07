@@ -5,6 +5,7 @@ using EarTrumpet.Interop.Helpers;
 using EarTrumpet.UI.Themes;
 using System;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 
 namespace EarTrumpet.UI.Helpers
@@ -15,6 +16,162 @@ namespace EarTrumpet.UI.Helpers
         const int _animationOffset = 8;
         const int _entranceDurationMs = 165;
         const int _exitDurationMs = 105;
+
+        // Premium "pop" entrance: content scales up from the taskbar edge with a slight
+        // elastic overshoot (BackEase). Tuned to read as snappy, not bouncy.
+        const int _scaleEntranceDurationMs = 220;
+        const double _entranceFromScale = 0.92;
+        const double _backEaseAmplitude = 0.35;
+
+        // Staggered row reveal: each row fades + slides up, offset by a growing delay.
+        const int _staggerPerItemMs = 28;
+        const int _staggerRowDurationMs = 260;
+        const double _staggerSlideFromPx = 10;
+        const int _staggerMaxItems = 24; // cap so a huge app list can't make the tail crawl in
+
+        /// <summary>
+        /// Reveals rows one-by-one with a short, growing delay (fade + slide-up), producing
+        /// the cascade effect on open. Pass the rows in visual (top-to-bottom) order. No-op
+        /// when animations are disabled. Each row gets its own TranslateTransform that is
+        /// cleared on completion so layout/hit-testing is unaffected afterwards.
+        /// </summary>
+        public static void BeginStaggeredRowReveal(System.Collections.Generic.IReadOnlyList<FrameworkElement> rows)
+        {
+            if (!Manager.Current.AnimationsEnabled || rows == null || rows.Count == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < rows.Count; i++)
+            {
+                var row = rows[i];
+                if (row == null)
+                {
+                    continue;
+                }
+
+                var delayMs = System.Math.Min(i, _staggerMaxItems) * _staggerPerItemMs;
+                var beginTime = TimeSpan.FromMilliseconds(delayMs);
+                var duration = new Duration(TimeSpan.FromMilliseconds(_staggerRowDurationMs));
+                var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+
+                var translate = new TranslateTransform(0, _staggerSlideFromPx);
+                row.RenderTransform = translate;
+
+                // Start hidden so the pre-delay frames don't flash the row at its final spot.
+                row.Opacity = 0;
+
+                var fade = new DoubleAnimation
+                {
+                    From = 0, To = 1,
+                    BeginTime = beginTime,
+                    Duration = duration,
+                    EasingFunction = ease,
+                    FillBehavior = FillBehavior.Stop,
+                };
+                fade.Completed += (s, e) => row.Opacity = 1;
+
+                var slide = new DoubleAnimation
+                {
+                    From = _staggerSlideFromPx, To = 0,
+                    BeginTime = beginTime,
+                    Duration = duration,
+                    EasingFunction = ease,
+                    FillBehavior = FillBehavior.Stop,
+                };
+                slide.Completed += (s, e) => row.RenderTransform = null;
+
+                row.BeginAnimation(UIElement.OpacityProperty, fade);
+                translate.BeginAnimation(TranslateTransform.YProperty, slide);
+            }
+        }
+
+        /// <summary>
+        /// Premium entrance: scales the flyout content up from the taskbar-anchored edge
+        /// with an elastic overshoot, while the window fades in. Runs on the WPF content
+        /// (a ScaleTransform on <paramref name="content"/>), not the Win32 window, so it
+        /// stays GPU-cheap. Falls back to an instant show when animations are disabled.
+        /// </summary>
+        public static void BeginFlyoutScaleEntranceAnimation(Window window, FrameworkElement content, WindowsTaskbar.State taskbar, Action completed)
+        {
+            var onCompleted = new EventHandler((s, e) =>
+            {
+                window.Topmost = true;
+                window.Focus();
+                User32.SetForegroundWindow(window.GetHandle());
+                completed();
+            });
+
+            window.Topmost = false;
+            window.Activate();
+            BringTaskbarToFront();
+
+            if (!Manager.Current.AnimationsEnabled)
+            {
+                window.Cloak(false);
+                onCompleted(null, null);
+                return;
+            }
+
+            // Anchor the scale origin to the edge nearest the taskbar so the flyout
+            // appears to grow out of the tray, mirroring native Win11 flyouts.
+            content.RenderTransformOrigin = GetScaleOriginForTaskbar(taskbar);
+            var scale = new ScaleTransform(_entranceFromScale, _entranceFromScale);
+            content.RenderTransform = scale;
+
+            var ease = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = _backEaseAmplitude };
+            var duration = new Duration(TimeSpan.FromMilliseconds(_scaleEntranceDurationMs));
+
+            var scaleAnim = new DoubleAnimation
+            {
+                From = _entranceFromScale,
+                To = 1.0,
+                Duration = duration,
+                EasingFunction = ease,
+                FillBehavior = FillBehavior.Stop,
+            };
+            // Completion fires once (hooked on the Y animation only) to clear the transform
+            // and hand control back to the caller.
+            scaleAnim.Completed += (s, e) =>
+            {
+                content.RenderTransform = null;
+                content.RenderTransformOrigin = new Point(0, 0);
+                onCompleted(null, null);
+            };
+
+            if (SystemSettings.IsTransparencyEnabled)
+            {
+                window.Opacity = 0;
+                var fade = new DoubleAnimation
+                {
+                    From = 0, To = 1,
+                    Duration = new Duration(TimeSpan.FromMilliseconds(_entranceDurationMs)),
+                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
+                    FillBehavior = FillBehavior.Stop,
+                };
+                fade.Completed += (s, e) => window.Opacity = 1;
+                window.BeginAnimation(UIElement.OpacityProperty, fade);
+            }
+
+            window.Cloak(false);
+
+            // Bind X without a completion handler; Y carries the single completion callback.
+            var scaleAnimX = scaleAnim.Clone();
+            scale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnimX);
+            scale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
+        }
+
+        private static Point GetScaleOriginForTaskbar(WindowsTaskbar.State taskbar)
+        {
+            switch (taskbar.Location)
+            {
+                case WindowsTaskbar.Position.Left: return new Point(0, 1);
+                case WindowsTaskbar.Position.Right: return new Point(1, 1);
+                case WindowsTaskbar.Position.Top: return new Point(0.5, 0);
+                case WindowsTaskbar.Position.Bottom:
+                default: return new Point(0.5, 1);
+            }
+        }
 
         public static void BeginFlyoutEntranceAnimation(Window window, WindowsTaskbar.State taskbar, Action completed)
         {

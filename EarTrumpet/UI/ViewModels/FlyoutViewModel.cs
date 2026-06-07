@@ -94,6 +94,10 @@ private readonly Action _returnFocusToTray;
         private bool _closedDuringOpen;
         private bool _openAfterClose;
         private InputType _openAfterCloseInput;
+        // Timestamp of the last light-dismiss deactivation. A tray click on an already-open
+        // flyout first deactivates it (closing it), then delivers the click — without this
+        // guard that trailing click re-opens the flyout. Used to absorb that click.
+        private DateTime _lastDeactivatedAt = DateTime.MinValue;
         private MouseHook _mh;
         private Rect _winRect;
 
@@ -523,6 +527,17 @@ private readonly Action _returnFocusToTray;
 
         public void OpenFlyout(InputType inputType)
         {
+            // A mouse click on the tray icon while the flyout is open deactivates it first
+            // (light dismiss closes it), then this click is delivered. Without this guard the
+            // click would re-open the just-closed flyout. If the click lands right after a
+            // deactivation, treat it as the dismiss and absorb it. Keyboard reopen is unaffected.
+            if (inputType == InputType.Mouse
+                && (State == FlyoutViewState.Closing_Stage1 || State == FlyoutViewState.Closing_Stage2)
+                && (DateTime.UtcNow - _lastDeactivatedAt) < TimeSpan.FromMilliseconds(300))
+            {
+                return;
+            }
+
             switch (State)
             {
                 case FlyoutViewState.Hidden:
@@ -554,6 +569,7 @@ private readonly Action _returnFocusToTray;
             {
                 return;
             }
+            _lastDeactivatedAt = DateTime.UtcNow;
             BeginClose(InputType.Command);
         }
 
