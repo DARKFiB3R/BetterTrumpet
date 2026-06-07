@@ -633,7 +633,12 @@
                                                   Content="{TemplateBinding Content}"
                                                   Focusable="False"
                                                   RecognizesAccessKey="True"
-                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                                  RenderTransformOrigin="0.5,0.5"
+                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                                    <ContentPresenter.RenderTransform>
+                                        <ScaleTransform x:Name="MuteScale" ScaleX="1" ScaleY="1" />
+                                    </ContentPresenter.RenderTransform>
+                                </ContentPresenter>
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
@@ -641,6 +646,27 @@
                                 </Trigger>
                                 <Trigger Property="IsPressed" Value="True">
                                     <Setter Property="Theme:Brush.Foreground" Value="Theme=ApplicationText{Theme}Theme/1, HighContrast=Highlight" />
+                                    <!-- Tactile bounce: quick squish on press, spring back on release -->
+                                    <Trigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="MuteScale" Storyboard.TargetProperty="ScaleX" To="0.8" Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="MuteScale" Storyboard.TargetProperty="ScaleY" To="0.8" Duration="0:0:0.08" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.EnterActions>
+                                    <Trigger.ExitActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="MuteScale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.22">
+                                                    <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.6" /></DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                                <DoubleAnimation Storyboard.TargetName="MuteScale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.22">
+                                                    <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.6" /></DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.ExitActions>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>

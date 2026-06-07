@@ -100,14 +100,14 @@ namespace EarTrumpet.UI.Views
 
                 case FlyoutViewState.Closing_Stage1:
                     DevicesList.FindVisualChild<DeviceView>()?.FocusAndRemoveFocusVisual();
-                
+
                     if (_viewModel.IsExpandingOrCollapsing)
                     {
                         WindowAnimationLibrary.BeginFlyoutExitanimation(this, () =>
                         {
                             this.Cloak();
                             AccentPolicyLibrary.DisableAcrylic(this);
-                
+
                             // Go directly to ViewState.Hidden to avoid the stage 2 hide delay (debounce for tray clicks),
                             // we want to show again immediately.
                             _viewModel.ChangeState(FlyoutViewState.Hidden);
