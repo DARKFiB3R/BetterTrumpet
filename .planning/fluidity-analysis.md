@@ -12,6 +12,26 @@ La cause racine est structurelle : **MagicPods est une app de composition native
 
 ---
 
+## ⚠️ LEÇON APPRISE (2026-06-07) — l'acrylic DWM ne marche PAS sur WPF classique
+
+Hypothèse initiale (Plan 1) : retirer `AllowsTransparency="True"` puis appliquer `DWMWA_SYSTEMBACKDROP_TYPE = Acrylic` donnerait un acrylic GPU natif. **C'est FAUX pour l'acrylic.**
+
+Testé empiriquement (4 variantes, branche `migration/net8`) :
+1. `DWMWA_SYSTEMBACKDROP_TYPE` seul (AllowsTransparency=false) → **noir opaque**.
+2. + `CompositionTarget.BackgroundColor = Transparent` → toujours noir, puis…
+3. + `DwmExtendFrameIntoClientArea(-1)` → **gris plat tinté** (pas d'acrylic).
+4. + contenu `FlyoutBackground` transparent → **identique, gris plat**.
+
+Cause racine : WPF possède sa propre surface de composition (HWND redirigé DirectX) qui n'expose pas le canal alpha par-pixel que le DWM attend pour composer l'acrylic derrière. `DwmExtendFrameIntoClientArea(-1)` est de surcroît la technique **Windows 10 legacy** (« glass sheet »), incompatible avec le backdrop type moderne → verre plat.
+
+**Conclusions :**
+- L'acrylic translucide sur WPF s'obtient soit via **`AccentPolicyLibrary`** (l'ancien `SetWindowCompositionAttribute`, déjà dans le code, rendu logiciel mais visuellement correct), soit via **`DesktopAcrylicController`** (Windows App SDK — lourd, runtime à packager).
+- La prémisse « retirer AllowsTransparency → meilleur acrylic » était fausse. Le gain GPU de net8 est **réel pour les ANIMATIONS et le rendu général**, PAS pour la matière acrylic.
+- **Décision** : on garde l'acrylic d'origine (`AccentPolicyLibrary` + `AllowsTransparency=true`) et on investit le premium dans les **animations GPU + layout + micro-interactions**, là où net8 apporte un vrai gain sans casser la matière.
+- Mica (`DWMSBT_MAINWINDOW`) pourrait éventuellement s'appliquer sur WPF (matière opaque, pas translucide) mais non retenu pour un flyout.
+
+---
+
 ## Diagnostic détaillé
 
 ### 1. `AllowsTransparency="True"` → rendu software (coupable n°1)
@@ -149,3 +169,11 @@ Le TFM Windows les couvre toutes — fichiers concernés :
   - **`App.config` supprimé** : legacy 100 % (supportedRuntime v4.6.2, switch DPI ignoré en net8, binding redirect inutile). DPI désormais 100 % via App.manifest PerMonitorV2.
   - Résultat : `dotnet build -c Release -p:Platform=x86` → 0 erreur / 0 warning. exe + dll + 32 satellites de langue générés dans `Build\Release`.
   - **RESTE À FAIRE** : #4 valider l'app au runtime (lancement, flyout, tray, settings, DPI) — nécessite test visuel ; #5 packaging MSIX wapproj→net8 ; #6 CI Azure (UseDotNet). NB : la `.sln` référence encore les projets en format legacy — build via `dotnet build EarTrumpet.csproj` pour l'instant.
+- 2026-06-07 — **App net8 validée au runtime** (#4 OK) : lancement, flyout, tray, settings fonctionnels. Tentative backdrop DWM acrylic → échec (voir « Leçon apprise »). Revert chirurgical : flyout + plomberie DWM restaurés à l'état du commit `856c2ef2`. Code source EarTrumpet/ = identique au commit vert (migration propre, 0 résidu). Acrylic d'origine (`AccentPolicyLibrary`) confirmé de retour. **Pivot premium → animations GPU + layout + micro-interactions** (le vrai gain net8).
+- 2026-06-07 — **Jalon premium commité (`a4974fcd`)**. Validé runtime par l'utilisateur :
+  - Animation d'ouverture « pop » (scale 0.92→1 + BackEase overshoot, ancrée au bord taskbar, sur ScaleTransform du contenu). `BeginFlyoutScaleEntranceAnimation`.
+  - Cascade des lignes (fade + slide-up en stagger ~28ms/ligne). `BeginStaggeredRowReveal` + helper `FindVisualChildren<T>`.
+  - Toggle fix : reclic icône = ferme (horodatage de désactivation light-dismiss pour absorber le clic de dismiss ; réouverture clavier préservée).
+  - **Fix bug préexistant** : custom colors figeait `AcrylicColor_Flyout` opaque + écrasait `FlyoutBackground` → flyout opaque permanent après ouverture settings. Corrigé : la couleur custom teinte l'acrylic lui-même à opacité translucide transparence-aware (`FlyoutAcrylicTintOpacity = 0.7`), contenu intact. Teinte + translucide OK.
+  - **RESTE À FAIRE premium** : exposer l'intensité de teinte + le style/vitesse d'animation comme réglages settings (#8) ; éventuel layout/micro-interactions.
+  - **RESTE migration** : #5 packaging MSIX, #6 CI Azure. Branche `migration/net8` = 2 commits locaux non poussés (`856c2ef2` migration, `a4974fcd` premium). master intact.

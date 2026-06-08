@@ -822,6 +822,13 @@ namespace EarTrumpet
             set => _settings.Set("VolumeAnimationSpeed", value);
         }
 
+        // Enable/disable volume tick sound effect
+        public bool UseVolumeTickSound
+        {
+            get => _settings.Get("UseVolumeTickSound", true);
+            set => _settings.Set("UseVolumeTickSound", value);
+        }
+
         // Peak meter FPS: 20 (performance), 30 (balanced), or 60 (smooth). Default 30
         // Note: 30fps is a good balance between smoothness and CPU usage
         // Most users won't notice the difference from 60fps for peak meters

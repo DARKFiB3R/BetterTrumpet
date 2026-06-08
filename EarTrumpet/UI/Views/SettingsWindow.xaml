@@ -257,6 +257,11 @@
                         <TextBlock Style="{StaticResource BodySubText}" FontSize="11" Opacity="0.5" Margin="0,8,0,0"
                                    TextWrapping="Wrap"
                                    Text="{x:Static resx:Resources.SettingsLogVolumeDesc}" />
+
+                        <CheckBox HorizontalAlignment="Left" Margin="0,12,0,0"
+                                  Content="{x:Static resx:Resources.SettingsVolumeTickSound}"
+                                  IsChecked="{Binding UseVolumeTickSound, Mode=TwoWay}"
+                                  ToolTip="{x:Static resx:Resources.SettingsVolumeTickSoundTip}" />
                     </StackPanel>
                 </Border>
 
@@ -2245,27 +2250,31 @@
                 <!-- Attribution -->
                 <StackPanel Margin="12,0,12,20">
                     <TextBlock Style="{StaticResource BodyText}"
-                               Text="{x:Static resx:Resources.ForkAttributionText}" />
+                               Text="{Binding DeveloperText}" />
+                    <TextBlock Style="{StaticResource BodyText}"
+                               Margin="0,4,0,0"
+                               Text="{Binding ForkText}" />
                     <TextBlock Style="{StaticResource BodyText}"
                                Opacity="0.5"
+                               Margin="0,8,0,0"
                                Text="{Binding CopyrightText}" />
                 </StackPanel>
 
                 <!-- Links -->
                 <StackPanel Margin="12,0,12,0">
                     <TextBlock Style="{StaticResource HyperlinkBlock}" Margin="0,0,0,4">
-                        <Hyperlink Command="{Binding OpenPrivacyPolicyCommand}">
-                            <Run Text="{x:Static resx:Resources.PrivacyPolicyText}" />
-                        </Hyperlink>
-                    </TextBlock>
-                    <TextBlock Style="{StaticResource HyperlinkBlock}" Margin="0,0,0,4">
-                        <Hyperlink Command="{Binding OpenAboutCommand}">
-                            <Run Text="{x:Static resx:Resources.WebsiteText}" />
+                        <Hyperlink Command="{Binding OpenGitHubCommand}">
+                            <Run Text="{x:Static resx:Resources.AboutGitHub}" />
                         </Hyperlink>
                     </TextBlock>
                     <TextBlock Style="{StaticResource HyperlinkBlock}" Margin="0,0,0,4">
                         <Hyperlink Command="{Binding OpenFeedbackCommand}">
-                            <Run Text="{x:Static resx:Resources.ContextMenuSendFeedback}" />
+                            <Run Text="{x:Static resx:Resources.AboutFeedback}" />
+                        </Hyperlink>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource HyperlinkBlock}" Margin="0,0,0,4">
+                        <Hyperlink Command="{Binding OpenBugReportCommand}">
+                            <Run Text="{x:Static resx:Resources.AboutReportBug}" />
                         </Hyperlink>
                     </TextBlock>
                     <TextBlock Style="{StaticResource HyperlinkBlock}" Margin="0,0,0,4">

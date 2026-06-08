@@ -874,6 +874,27 @@ Open [https://eartrumpet.app/jmp/fixfonts] now?</value>
   <data name="SettingsSmoothVolumeAnimation" xml:space="preserve">
     <value>Smooth volume animation</value>
   </data>
+  <data name="SettingsVolumeTickSound" xml:space="preserve">
+    <value>Volume tick sound effect</value>
+  </data>
+  <data name="SettingsVolumeTickSoundTip" xml:space="preserve">
+    <value>Play a subtle tick sound when adjusting volume</value>
+  </data>
+  <data name="AboutDeveloper" xml:space="preserve">
+    <value>Developed by xammen</value>
+  </data>
+  <data name="AboutFork" xml:space="preserve">
+    <value>Fork of EarTrumpet (thx for your great work!)</value>
+  </data>
+  <data name="AboutGitHub" xml:space="preserve">
+    <value>GitHub Repository</value>
+  </data>
+  <data name="AboutFeedback" xml:space="preserve">
+    <value>Feedback &amp; Suggestions</value>
+  </data>
+  <data name="AboutReportBug" xml:space="preserve">
+    <value>Report a Bug</value>
+  </data>
   <data name="SettingsAnimationSpeedLabel" xml:space="preserve">
     <value>Animation speed</value>
   </data>

@@ -115,13 +115,14 @@
     </Window.Resources>
 
     <!-- ═══ SHELL ═══ -->
-    <Border CornerRadius="14" ClipToBounds="True" Background="#FF101014">
+    <Border CornerRadius="14" ClipToBounds="True" Background="#FF101014"
+            AutomationProperties.Name="BetterTrumpet Onboarding">
         <Border.Effect>
             <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.35" Color="Black"/>
         </Border.Effect>
         <Grid>
-            <!-- Gradient mesh -->
-            <Border CornerRadius="14,14,0,0" VerticalAlignment="Top" Height="220"
+            <!-- Gradient mesh with shimmer -->
+            <Border x:Name="GradientMesh" CornerRadius="14,14,0,0" VerticalAlignment="Top" Height="220"
                     IsHitTestVisible="False" Opacity="0.5">
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -137,7 +138,35 @@
             <!-- Inner stroke -->
             <Border CornerRadius="14" BorderThickness="1" BorderBrush="#15FFFFFF" IsHitTestVisible="False"/>
 
-            <Grid>
+            <!-- SPLASH SCREEN -->
+            <Grid x:Name="SplashContainer" Visibility="Collapsed">
+                <Grid.Background>
+                    <SolidColorBrush Color="#FF101014"/>
+                </Grid.Background>
+
+                <!-- Splash canvas for particles -->
+                <Canvas x:Name="SplashCanvas" IsHitTestVisible="False"/>
+
+                <!-- Logo container -->
+                <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Border Width="80" Height="80" CornerRadius="20" Background="#15FFFFFF"
+                            RenderTransformOrigin="0.5,0.5">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#3B9EFF" BlurRadius="40" ShadowDepth="0" Opacity="0.3"/>
+                        </Border.Effect>
+                        <Border.RenderTransform>
+                            <ScaleTransform x:Name="SplashLogoScale" ScaleX="0.5" ScaleY="0.5"/>
+                        </Border.RenderTransform>
+                        <Image Width="56" Height="56"
+                               Source="/BetterTrumpet;component/Assets/icon.png"
+                               RenderOptions.BitmapScalingMode="Fant"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- MAIN CONTENT -->
+            <Grid x:Name="MainContent" Opacity="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
@@ -162,16 +191,24 @@
 
                     <!-- Title bar area for drag + Skip -->
                     <Grid Height="44" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                        <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center"
+                        <TextBlock x:Name="SkipButton" HorizontalAlignment="Right" VerticalAlignment="Center"
                                    Margin="0,0,20,0" Cursor="Hand"
                                    MouseLeftButtonDown="Skip_Click"
-                                    FontSize="12" FontWeight="Medium" Text="{x:Static resx:Resources.OnboardingSkip}">
+                                   Focusable="True"
+                                   KeyboardNavigation.TabIndex="1"
+                                   AutomationProperties.Name="Skip onboarding"
+                                   AutomationProperties.HelpText="Press Enter or click to skip the onboarding process"
+                                   FontSize="12" FontWeight="Medium" Text="{x:Static resx:Resources.OnboardingSkip}">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="#40FFFFFF"/>
+                                    <Setter Property="Foreground" Value="#70FFFFFF"/>
                                     <Style.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Foreground" Value="#80FFFFFF"/>
+                                            <Setter Property="Foreground" Value="#A0FFFFFF"/>
+                                        </Trigger>
+                                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                            <Setter Property="TextDecorations" Value="Underline"/>
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
@@ -184,35 +221,108 @@
                 <Grid Grid.Row="1" Margin="48,0,48,0">
 
                     <!-- ══ PAGE 0: WELCOME ══ -->
-                    <StackPanel x:Name="Page0" VerticalAlignment="Center"
+                    <Grid x:Name="Page0" VerticalAlignment="Center"
                                 Visibility="{Binding IsPage0, Converter={StaticResource BoolVis}}">
-                        <StackPanel.RenderTransform>
+                        <Grid.RenderTransform>
                             <TranslateTransform x:Name="Page0Translate"/>
-                        </StackPanel.RenderTransform>
+                        </Grid.RenderTransform>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="180"/>
+                        </Grid.ColumnDefinitions>
 
-                        <!-- Logo -->
-                        <Grid HorizontalAlignment="Left" Margin="0,0,0,32">
-                            <Border Width="64" Height="64" CornerRadius="16" Background="#15FFFFFF">
+                        <!-- Left: Hero content -->
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <!-- Logo with 3D hover effect -->
+                            <Grid HorizontalAlignment="Left" Margin="0,0,0,32">
+                                <Border x:Name="WelcomeLogoBorder" Width="64" Height="64" CornerRadius="16"
+                                        Background="#15FFFFFF" Cursor="Hand"
+                                        MouseEnter="WelcomeLogo_MouseEnter"
+                                        MouseLeave="WelcomeLogo_MouseLeave"
+                                        RenderTransformOrigin="0.5,0.5">
+                                    <Border.RenderTransform>
+                                        <TransformGroup>
+                                            <ScaleTransform x:Name="WelcomeLogoScale" ScaleX="1" ScaleY="1"/>
+                                            <RotateTransform x:Name="WelcomeLogoRotateY" Angle="0"/>
+                                        </TransformGroup>
+                                    </Border.RenderTransform>
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#2196F3" BlurRadius="24" ShadowDepth="0" Opacity="0.12"/>
+                                    </Border.Effect>
+                                    <Image Width="44" Height="44"
+                                           Source="/BetterTrumpet;component/Assets/icon.png"
+                                           RenderOptions.BitmapScalingMode="Fant"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </Grid>
+
+                            <TextBlock Text="{x:Static resx:Resources.OnboardingWelcomeTo}" FontSize="14" FontWeight="Medium"
+                                       Foreground="{StaticResource T2}" Margin="0,0,0,4"/>
+                            <TextBlock Text="BetterTrumpet" FontSize="32" FontWeight="Bold"
+                                       Foreground="{StaticResource T1}" Margin="0,0,0,14"/>
+
+                            <!-- Typing effect subtitle -->
+                            <TextBlock x:Name="WelcomeSubtitle" FontSize="14" LineHeight="22"
+                                       Foreground="{StaticResource T2}" TextWrapping="Wrap"
+                                       MaxWidth="280" HorizontalAlignment="Left" Margin="0,0,0,20"/>
+
+                            <!-- Stats counter -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Border Background="#102196F3" CornerRadius="6" Padding="10,6">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                                   Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center"
+                                                   Margin="0,0,6,0"/>
+                                        <TextBlock x:Name="UserCountText" Text="4,000+" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource T1}" VerticalAlignment="Center"/>
+                                        <TextBlock Text=" users" FontSize="13"
+                                                   Foreground="{StaticResource T2}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock x:Name="VersionText" FontSize="11" Margin="0,8,0,0"
+                                       Foreground="#60FFFFFF"/>
+                        </StackPanel>
+
+                        <!-- Right: Floating preview -->
+                        <Grid Grid.Column="1" VerticalAlignment="Center" Margin="20,0,0,0">
+                            <Border x:Name="FloatingPreview" Width="140" Height="180" CornerRadius="12"
+                                    Background="#12FFFFFF"
+                                    BorderBrush="#15FFFFFF" BorderThickness="1"
+                                    RenderTransformOrigin="0.5,0.5">
+                                <Border.RenderTransform>
+                                    <TransformGroup>
+                                        <ScaleTransform x:Name="PreviewScale" ScaleX="1" ScaleY="1"/>
+                                        <TranslateTransform x:Name="PreviewFloat" Y="0"/>
+                                    </TransformGroup>
+                                </Border.RenderTransform>
                                 <Border.Effect>
-                                    <DropShadowEffect Color="#2196F3" BlurRadius="24" ShadowDepth="0" Opacity="0.12"/>
+                                    <DropShadowEffect Color="#2196F3" BlurRadius="20" ShadowDepth="0" Opacity="0.15"/>
                                 </Border.Effect>
-                                <Image Width="44" Height="44"
-                                       Source="/BetterTrumpet;component/Assets/icon.png"
-                                       RenderOptions.BitmapScalingMode="Fant"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                <!-- Mini mixer preview -->
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <TextBlock Text="&#xE767;" FontFamily="Segoe MDL2 Assets" FontSize="20"
+                                               Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center"
+                                               Margin="0,0,0,12"/>
+                                    <!-- Animated sliders -->
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,8">
+                                        <Rectangle x:Name="PreviewBar1" Width="12" Height="40" RadiusX="3" RadiusY="3"
+                                                   Fill="#403B9EFF" Margin="0,0,6,0"/>
+                                        <Rectangle x:Name="PreviewBar2" Width="12" Height="60" RadiusX="3" RadiusY="3"
+                                                   Fill="#507C4DFF" Margin="0,0,6,0"/>
+                                        <Rectangle x:Name="PreviewBar3" Width="12" Height="35" RadiusX="3" RadiusY="3"
+                                                   Fill="#5000BCD4" Margin="0,0,6,0"/>
+                                        <Rectangle x:Name="PreviewBar4" Width="12" Height="50" RadiusX="3" RadiusY="3"
+                                                   Fill="#403B9EFF"/>
+                                    </StackPanel>
+                                    <TextBlock Text="Quick Control" FontSize="10" Foreground="{StaticResource T3}"
+                                               HorizontalAlignment="Center"/>
+                                </StackPanel>
                             </Border>
                         </Grid>
-
-                        <TextBlock Text="{x:Static resx:Resources.OnboardingWelcomeTo}" FontSize="14" FontWeight="Medium"
-                                   Foreground="{StaticResource T2}" Margin="0,0,0,4"/>
-                        <TextBlock Text="BetterTrumpet" FontSize="32" FontWeight="Bold"
-                                   Foreground="{StaticResource T1}" Margin="0,0,0,14"/>
-                        <TextBlock Text="{Binding SubtitleText}" FontSize="14" LineHeight="22"
-                                   Foreground="{StaticResource T2}" TextWrapping="Wrap"
-                                   MaxWidth="380" HorizontalAlignment="Left"/>
-                        <TextBlock x:Name="VersionText" FontSize="11" Margin="0,20,0,0"
-                                   Foreground="{StaticResource T3}"/>
-                    </StackPanel>
+                    </Grid>
 
                     <!-- ══ PAGE 1: AUDIO ══ -->
                     <StackPanel x:Name="Page1"
@@ -242,7 +352,10 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Border Style="{StaticResource DeviceCard}"
-                                                MouseLeftButtonDown="DeviceCard_Click" Tag="{Binding}">
+                                                MouseLeftButtonDown="DeviceCard_Click"
+                                                PreviewKeyDown="DeviceCard_KeyDown"
+                                                KeyboardNavigation.TabIndex="20"
+                                                Tag="{Binding}">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*"/>
@@ -276,7 +389,7 @@
                         </ScrollViewer>
                     </StackPanel>
 
-                    <!-- ══ PAGE 2: APPEARANCE (with mini previews) ══ -->
+                    <!-- ══ PAGE 2: APPEARANCE (with real-time preview) ══ -->
                     <StackPanel x:Name="Page2"
                                 Visibility="{Binding IsPage2, Converter={StaticResource BoolVis}}">
                         <StackPanel.RenderTransform>
@@ -298,12 +411,18 @@
                             </Grid.ColumnDefinitions>
 
                             <!-- System (with mini preview) -->
-                            <Border Grid.Column="0" CornerRadius="12" Cursor="Hand"
-                                    MouseLeftButtonDown="Theme0_Click" ClipToBounds="True">
+                            <Border x:Name="Theme0Card" Grid.Column="0" CornerRadius="12" Cursor="Hand"
+                                    MouseLeftButtonDown="Theme0_Click"
+                                    Focusable="True"
+                                    KeyboardNavigation.TabIndex="10"
+                                    PreviewKeyDown="ThemeCard_KeyDown"
+                                    AutomationProperties.Name="System theme"
+                                    AutomationProperties.HelpText="Use Windows system theme colors"
+                                    ClipToBounds="True">
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
-                                        <Setter Property="BorderThickness" Value="1.5"/>
+                                        <Setter Property="BorderThickness" Value="2"/>
                                         <Setter Property="BorderBrush" Value="{StaticResource StrokeBrush}"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding SelectedThemeIndex}" Value="0">
@@ -317,21 +436,28 @@
                                                     <Setter.Value><SolidColorBrush Color="{StaticResource SurfaceHoverColor}"/></Setter.Value>
                                                 </Setter>
                                             </Trigger>
+                                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect Color="#3B9EFF" BlurRadius="16" ShadowDepth="0" Opacity="0.5"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
                                 <StackPanel>
-                                    <!-- Mini preview: dark mixer bars -->
+                                    <!-- Mini preview: dark mixer bars with animation -->
                                     <Border Height="80" Background="#0AFFFFFF" CornerRadius="10,10,0,0" Padding="16,12">
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom"
                                                     HorizontalAlignment="Center">
-                                            <Rectangle Width="16" Height="36" RadiusX="3" RadiusY="3"
+                                            <Rectangle x:Name="Theme0Bar1" Width="16" Height="36" RadiusX="3" RadiusY="3"
                                                        Fill="#30FFFFFF" Margin="0,0,6,0"/>
-                                            <Rectangle Width="16" Height="52" RadiusX="3" RadiusY="3"
+                                            <Rectangle x:Name="Theme0Bar2" Width="16" Height="52" RadiusX="3" RadiusY="3"
                                                        Fill="#25FFFFFF" Margin="0,0,6,0"/>
-                                            <Rectangle Width="16" Height="28" RadiusX="3" RadiusY="3"
+                                            <Rectangle x:Name="Theme0Bar3" Width="16" Height="28" RadiusX="3" RadiusY="3"
                                                        Fill="#20FFFFFF" Margin="0,0,6,0"/>
-                                            <Rectangle Width="16" Height="44" RadiusX="3" RadiusY="3"
+                                            <Rectangle x:Name="Theme0Bar4" Width="16" Height="44" RadiusX="3" RadiusY="3"
                                                        Fill="#30FFFFFF"/>
                                         </StackPanel>
                                     </Border>
@@ -344,13 +470,19 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Custom (with colored preview) -->
-                            <Border Grid.Column="2" CornerRadius="12" Cursor="Hand"
-                                    MouseLeftButtonDown="Theme1_Click" ClipToBounds="True">
+                            <!-- Custom (with colored preview and animation) -->
+                            <Border x:Name="Theme1Card" Grid.Column="2" CornerRadius="12" Cursor="Hand"
+                                    MouseLeftButtonDown="Theme1_Click"
+                                    Focusable="True"
+                                    KeyboardNavigation.TabIndex="11"
+                                    PreviewKeyDown="ThemeCard_KeyDown"
+                                    AutomationProperties.Name="Custom theme"
+                                    AutomationProperties.HelpText="Use custom colored theme with accent colors"
+                                    ClipToBounds="True">
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
-                                        <Setter Property="BorderThickness" Value="1.5"/>
+                                        <Setter Property="BorderThickness" Value="2"/>
                                         <Setter Property="BorderBrush" Value="{StaticResource StrokeBrush}"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding SelectedThemeIndex}" Value="1">
@@ -364,34 +496,46 @@
                                                     <Setter.Value><SolidColorBrush Color="{StaticResource SurfaceHoverColor}"/></Setter.Value>
                                                 </Setter>
                                             </Trigger>
+                                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect Color="#3B9EFF" BlurRadius="16" ShadowDepth="0" Opacity="0.5"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
                                 <StackPanel>
-                                    <!-- Mini preview: colored mixer bars -->
+                                    <!-- Mini preview: colored mixer bars with glow -->
                                     <Border Height="80" CornerRadius="10,10,0,0" Padding="16,12">
                                         <Border.Background>
                                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                <GradientStop Color="#101565C0" Offset="0"/>
-                                                <GradientStop Color="#102196F3" Offset="0.5"/>
-                                                <GradientStop Color="#107C4DFF" Offset="1"/>
+                                                <GradientStop Color="#151565C0" Offset="0"/>
+                                                <GradientStop Color="#152196F3" Offset="0.5"/>
+                                                <GradientStop Color="#157C4DFF" Offset="1"/>
                                             </LinearGradientBrush>
                                         </Border.Background>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom"
                                                     HorizontalAlignment="Center">
-                                            <Rectangle Width="16" Height="36" RadiusX="3" RadiusY="3"
-                                                       Fill="#503B9EFF" Margin="0,0,6,0"/>
-                                            <Rectangle Width="16" Height="52" RadiusX="3" RadiusY="3"
-                                                       Fill="#607C4DFF" Margin="0,0,6,0"/>
-                                            <Rectangle Width="16" Height="28" RadiusX="3" RadiusY="3"
-                                                       Fill="#5000BCD4" Margin="0,0,6,0"/>
-                                            <Rectangle Width="16" Height="44" RadiusX="3" RadiusY="3"
-                                                       Fill="#503B9EFF"/>
+                                            <Rectangle x:Name="Theme1Bar1" Width="16" Height="36" RadiusX="3" RadiusY="3"
+                                                       Fill="#603B9EFF" Margin="0,0,6,0"/>
+                                            <Rectangle x:Name="Theme1Bar2" Width="16" Height="52" RadiusX="3" RadiusY="3"
+                                                       Fill="#707C4DFF" Margin="0,0,6,0"/>
+                                            <Rectangle x:Name="Theme1Bar3" Width="16" Height="28" RadiusX="3" RadiusY="3"
+                                                       Fill="#6000BCD4" Margin="0,0,6,0"/>
+                                            <Rectangle x:Name="Theme1Bar4" Width="16" Height="44" RadiusX="3" RadiusY="3"
+                                                       Fill="#603B9EFF"/>
                                         </StackPanel>
                                     </Border>
                                     <StackPanel Margin="14,12,14,14">
-                                        <TextBlock Text="{x:Static resx:Resources.OnboardingCustomTheme}" FontSize="13" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource T1}"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{x:Static resx:Resources.OnboardingCustomTheme}" FontSize="13" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource T1}"/>
+                                            <Border Background="#10FFD54F" CornerRadius="4" Padding="6,2" Margin="6,0,0,0">
+                                                <TextBlock Text="NEW" FontSize="9" FontWeight="Bold" Foreground="#FFD54F"/>
+                                            </Border>
+                                        </StackPanel>
                                         <TextBlock Text="{x:Static resx:Resources.OnboardingCustomThemeDesc}" FontSize="11" Margin="0,2,0,0"
                                                    Foreground="{StaticResource T3}"/>
                                     </StackPanel>
@@ -400,7 +544,7 @@
                         </Grid>
                     </StackPanel>
 
-                    <!-- ══ PAGE 3: PRIVACY (no dark pattern) ══ -->
+                    <!-- ══ PAGE 3: PRIVACY (with visualization) ══ -->
                     <StackPanel x:Name="Page3"
                                 Visibility="{Binding IsPage3, Converter={StaticResource BoolVis}}">
                         <StackPanel.RenderTransform>
@@ -412,9 +556,34 @@
                         <TextBlock Text="{x:Static resx:Resources.OnboardingPrivacy}" FontSize="24" FontWeight="SemiBold"
                                    Foreground="{StaticResource T1}" Margin="0,0,0,6"/>
                         <TextBlock Text="{Binding SubtitleText}" FontSize="13"
-                                   Foreground="{StaticResource T2}" Margin="0,0,0,28"/>
+                                   Foreground="{StaticResource T2}" Margin="0,0,0,20"/>
 
-                        <!-- Telemetry -->
+                        <!-- Trust badges -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
+                            <Border Background="#102196F3" CornerRadius="6" Padding="8,5" Margin="0,0,6,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE8D8;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                               Foreground="#4CAF50" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                    <TextBlock Text="No Ads" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource T1}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="#102196F3" CornerRadius="6" Padding="8,5" Margin="0,0,6,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE8D8;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                               Foreground="#4CAF50" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                    <TextBlock Text="No Tracking" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource T1}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="#102196F3" CornerRadius="6" Padding="8,5">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE8D8;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                               Foreground="#4CAF50" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                    <TextBlock Text="No Selling" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource T1}"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Telemetry with visual indicator -->
                         <Border Padding="16,14" CornerRadius="10" Margin="0,0,0,4"
                                 Background="{StaticResource SurfaceBrush}"
                                 BorderBrush="{StaticResource StrokeBrush}" BorderThickness="1">
@@ -424,8 +593,12 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
-                                    <TextBlock Text="{x:Static resx:Resources.OnboardingCrashReports}" FontSize="13" FontWeight="SemiBold"
-                                               Foreground="{StaticResource T1}" Margin="0,0,0,3"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
+                                        <TextBlock Text="{x:Static resx:Resources.OnboardingCrashReports}" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource T1}"/>
+                                        <TextBlock Text="  (Anonymous)" FontSize="11" FontWeight="Normal"
+                                                   Foreground="{StaticResource T3}" VerticalAlignment="Center"/>
+                                    </StackPanel>
                                     <TextBlock Text="{x:Static resx:Resources.OnboardingCrashReportsDesc}" FontSize="12"
                                                Foreground="{StaticResource T3}"/>
                                 </StackPanel>
@@ -434,19 +607,22 @@
                                           VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
-                        <!-- Reassuring line under telemetry (always visible) -->
-                        <TextBlock Text="{x:Static resx:Resources.OnboardingCrashReportsInfo}"
-                                   FontSize="11" Foreground="{StaticResource T3}" Margin="4,6,0,0"
-                                   TextWrapping="Wrap"/>
+
+                        <!-- Privacy info -->
+                        <Border Margin="4,6,0,16" Padding="0">
+                            <TextBlock Text="{x:Static resx:Resources.OnboardingCrashReportsInfo}"
+                                       FontSize="11" Foreground="{StaticResource T3}"
+                                       TextWrapping="Wrap" MaxWidth="400" HorizontalAlignment="Left"/>
+                        </Border>
 
                         <!-- Extra reassurance when user disables telemetry -->
-                        <Border Margin="0,8,0,12" Padding="12,10" CornerRadius="8"
+                        <Border Margin="0,0,0,12" Padding="12,10" CornerRadius="8"
                                 Background="#15FFD54F"
                                 Visibility="{Binding ShowTelemetryReassurance, Converter={StaticResource BoolVis}}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="#FFD54F" VerticalAlignment="Top" Margin="0,1,10,0"/>
-                                <TextBlock FontSize="11.5" Foreground="{StaticResource T2}" TextWrapping="Wrap"
+                                <TextBlock Text="&#xE8D8;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="#4CAF50" VerticalAlignment="Top" Margin="0,1,10,0"/>
+                                <TextBlock FontSize="11.5" Foreground="{StaticResource T1}" TextWrapping="Wrap"
                                            MaxWidth="360"
                                            Text="{x:Static resx:Resources.OnboardingTelemetryReassurance}"/>
                             </StackPanel>
@@ -629,20 +805,9 @@
 
                         <TextBlock Text="{x:Static resx:Resources.OnboardingPinTitle}" FontSize="24" FontWeight="Bold"
                                    Foreground="{StaticResource T1}" Margin="0,0,0,6"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-                            <TextBlock FontSize="13" TextWrapping="Wrap" LineHeight="20" MaxWidth="360"
-                                       Foreground="{StaticResource T2}"
-                                       Text="{x:Static resx:Resources.OnboardingPinDesc}"/>
-                            <!-- Animated bouncing arrow ↓ -->
-                            <TextBlock x:Name="BouncingArrow" Text="&#xE74B;" FontFamily="Segoe MDL2 Assets"
-                                       FontSize="18" Foreground="{StaticResource AccentBrush}"
-                                       VerticalAlignment="Bottom" Margin="12,0,0,0"
-                                       RenderTransformOrigin="0.5,0.5">
-                                <TextBlock.RenderTransform>
-                                    <TranslateTransform x:Name="ArrowBounce" Y="0"/>
-                                </TextBlock.RenderTransform>
-                            </TextBlock>
-                        </StackPanel>
+                        <TextBlock FontSize="13" TextWrapping="Wrap" LineHeight="20" MaxWidth="360"
+                                   Foreground="{StaticResource T2}" Margin="0,0,0,20"
+                                   Text="{x:Static resx:Resources.OnboardingPinDesc}"/>
 
                         <!-- GIF demo -->
                         <Border CornerRadius="10" ClipToBounds="True" HorizontalAlignment="Left"
@@ -706,7 +871,13 @@
 
                     <!-- CTA button -->
                     <Border x:Name="CtaButton" Grid.Column="2" CornerRadius="20" Cursor="Hand"
-                            MouseLeftButtonDown="Next_Click" RenderTransformOrigin="0.5,0.5">
+                            MouseLeftButtonDown="Next_Click"
+                            Focusable="True"
+                            KeyboardNavigation.TabIndex="100"
+                            PreviewKeyDown="CtaButton_KeyDown"
+                            AutomationProperties.Name="Next"
+                            AutomationProperties.HelpText="Continue to next step"
+                            RenderTransformOrigin="0.5,0.5">
                         <Border.RenderTransform>
                             <ScaleTransform x:Name="CtaButtonScale" ScaleX="1" ScaleY="1"/>
                         </Border.RenderTransform>
@@ -718,6 +889,13 @@
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter Property="Background">
                                             <Setter.Value><SolidColorBrush Color="{StaticResource AccentHoverColor}"/></Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                        <Setter Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#3B9EFF" BlurRadius="20" ShadowDepth="0" Opacity="0.6"/>
+                                            </Setter.Value>
                                         </Setter>
                                     </Trigger>
                                     <!-- Wider on last page -->
@@ -732,9 +910,11 @@
                     </Border>
                 </Grid>
             </Grid>
+            <!-- End of MainContent Grid -->
 
             <!-- ═══ CONFETTI CANVAS (overlay, no hit-test) ═══ -->
             <Canvas x:Name="ConfettiCanvas" IsHitTestVisible="False" ClipToBounds="True"/>
         </Grid>
+        <!-- End of main Grid (line 122) -->
     </Border>
 </Window>

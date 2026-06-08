@@ -1,115 +1,44 @@
 # BetterTrumpet 3.0.13 Release Notes
 
-## 🐛 Bug Fixes
+## Summary
+small release, big cleanup. this one smooths out first-launch weirdness, speeds up startup, and adds a couple of nicer quality-of-life touches.
 
-### Backdrop Rendering Issue (#13)
-- **Fixed inconsistent backdrop/acrylic rendering on first startup**
-  - Added forced theme refresh after initialization
-  - Implemented deferred acrylic application using Dispatcher
-  - Backdrop now renders correctly on first launch without needing to open settings
-  - Improved theme binding to handle Options.Source propagation timing
+## startup cleanup
+- the app now gets past the first-launch backdrop issue without needing a trip through settings.
+- theme init timing is cleaner, so the flyout stops flashing weird on startup.
+- device loading happens in the background, so the tray appears sooner and the app feels lighter.
 
-### Device Context Menu
-- **Added "Set as default device" to device header context menu**
-  - Right-click on device title now shows context menu
-  - Quick access to set device as default without using 3-dot menu
-  - Improves accessibility and user experience
+## bug fixes
+- the backdrop / acrylic render issue from #13 is fixed.
+- hidden device handling is more stable now.
+- context menus around devices behave more consistently.
 
-## 🚀 CLI Enhancements
+## ui polish
+- you can now right-click a device and choose **hide this device**.
+- device header actions are easier to reach, including the quick default-device switch.
+- menus are cleaner and less noisy overall.
 
-### New Commands
-- **`doctor`** - System diagnostics and health check
-  - Reports audio device status
-  - Validates configuration
-  - Identifies potential issues
-  
-- **`batch`** - Execute multiple CLI commands in sequence
-  - Chain multiple operations in one call
-  - Example: `bt batch --set-volume 67 --app discord --set-volume 30 --app vivaldi`
-  - Improves automation and scripting capabilities
+## cli bits
+- **`doctor`** gives you a quick audio checkup.
+- **`batch`** lets you chain commands in one go.
+- shorthand aliases make common mute / volume actions faster to type.
 
-- **`volume` / `mute` / `unmute`** - Shorter command aliases
-  - `bt volume discord 67` (shorthand for `--set-volume`)
-  - `bt mute discord` (shorthand for `--mute`)
-  - `bt unmute discord` (shorthand for `--unmute`)
-  - More intuitive CLI experience
+```bash
+bt doctor
+bt batch --set-volume 67 --app discord --set-volume 30 --app vivaldi
+bt volume discord 67
+bt mute spotify
+bt unmute chrome
+```
 
-### Improved
-- Enhanced app name matching for CLI commands
-- Better error handling and reporting
-- Improved command parsing
+## under the hood
+- code cleanup and structure improvements.
+- better error handling and logging.
+- smarter resource handling during startup.
 
-## ⚡ Performance Improvements
-
-### Startup Optimization
-- **3-phase startup architecture for faster tray icon appearance**
-  - Phase 1: Instant tray icon (0-500ms) - icon visible immediately
-  - Phase 2: Audio loading (500ms-2s) - background initialization
-  - Phase 3: Feature loading (parallel) - non-blocking addons, hotkeys, etc.
-  - Tray icon now appears immediately even before audio devices load
-  
-### Resource Management
-- Lazy initialization of timers and non-critical components
-- Deferred media popup creation (only when enabled)
-- Parallel loading of background features
-- Reduced startup memory footprint
-
-## 🎨 UI/UX Improvements
-
-### Device Management
-- Hidden devices tracking and management
-- Improved device visibility controls
-- Better device state persistence
-- Context menu improvements
-
-### Theme System
-- Fixed theme binding edge cases
-- Improved color resolution timing
-- Better backdrop consistency across sessions
-
-## 🔧 Technical Improvements
-
-### Code Quality
-- Added comprehensive code comments for startup phases
-- Improved separation of concerns in initialization
-- Better error handling throughout
-- Enhanced logging for diagnostics
-
-### Settings
-- New hidden devices persistence system
-- Improved settings serialization
-- Added HiddenDeviceEntry tracking with timestamps
-
-## 📝 Documentation
-
-- Updated README with new CLI commands
-- Added examples for `batch`, `doctor`, and shorthand commands
-- Improved CLI command table organization
-- Updated command count (19+ commands)
-
-## 🛠️ Developer Experience
-
-### New Claude Code Skills
-- `/build` - Quick build and launch
-- `/restart` - Fast app restart
-- `/fix-issue` - Structured issue workflow
-- `/xaml-debug` - XAML layout debugging
-- `/commit-and-push` - Intelligent commits
-- `/test-feature` - Feature testing automation
-
-## 📊 Changes Summary
-
-- **20 files changed**
-- **1,174 additions**, 173 deletions
-- **2 bug fixes** (backdrop rendering, context menu)
-- **4 new CLI commands** (doctor, batch, volume, mute/unmute)
-- **Major startup performance improvements**
-
-## 🙏 Credits
-
-- Fixed by Claude Opus 4.8 with xammen
-- Issue #13 reported by @Meteony
-- Thanks to the EarTrumpet community
+## credits
+- big thanks to @Meteony for reporting the backdrop issue.
+- and thanks to everyone sending feedback and bug reports.
 
 ---
 

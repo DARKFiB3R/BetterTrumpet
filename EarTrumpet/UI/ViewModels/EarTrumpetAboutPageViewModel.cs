@@ -11,18 +11,20 @@ namespace EarTrumpet.UI.ViewModels
     class EarTrumpetAboutPageViewModel : SettingsPageViewModel, INotifyPropertyChanged
     {
         public ICommand OpenDiagnosticsCommand { get; }
-        public ICommand OpenAboutCommand { get; }
+        public ICommand OpenGitHubCommand { get; }
         public ICommand OpenFeedbackCommand { get; }
-        public ICommand OpenPrivacyPolicyCommand { get; }
+        public ICommand OpenBugReportCommand { get; }
         public ICommand CheckForUpdateCommand { get; }
         public ICommand ExportSettingsCommand { get; }
         public ICommand ImportSettingsCommand { get; }
         public string AboutText { get; }
+        public string DeveloperText => Properties.Resources.AboutDeveloper;
+        public string ForkText => Properties.Resources.AboutFork;
 
         /// <summary>
         /// Copyright line with a dynamic year so it never goes stale.
         /// </summary>
-        public string CopyrightText => $"© {DateTime.Now.Year} xmn";
+        public string CopyrightText => $"© 2026 xmn";
 
         public bool IsTelemetryEnabled
         {
@@ -147,10 +149,10 @@ namespace EarTrumpet.UI.ViewModels
             Subtitle = Properties.Resources.SettingsAboutSubtitle;
             AboutText = $"v{App.PackageVersion}";
 
-            OpenAboutCommand = new RelayCommand(OpenAbout);
+            OpenGitHubCommand = new RelayCommand(OpenGitHub);
             OpenDiagnosticsCommand = new RelayCommand(OpenDiagnostics);
-            OpenFeedbackCommand = new RelayCommand(OpenGitHubIssueChooser);
-            OpenPrivacyPolicyCommand = new RelayCommand(OpenPrivacyPolicy);
+            OpenFeedbackCommand = new RelayCommand(OpenFeedback);
+            OpenBugReportCommand = new RelayCommand(OpenBugReport);
             CheckForUpdateCommand = new RelayCommand(CheckForUpdate);
             ExportSettingsCommand = new RelayCommand(() => DataModel.SettingsExportService.ExportWithDialog(_settings));
             ImportSettingsCommand = new RelayCommand(() =>
@@ -228,8 +230,8 @@ namespace EarTrumpet.UI.ViewModels
             _openDiagnostics.Invoke();
         }
 
-        private void OpenGitHubIssueChooser() => ProcessHelper.StartNoThrow("https://github.com/xammen/BetterTrumpet/issues/new/choose");
-        private void OpenAbout() => ProcessHelper.StartNoThrow("https://bettertrumpet.hiii.boo");
-        private void OpenPrivacyPolicy() => ProcessHelper.StartNoThrow("https://github.com/xammen/BetterTrumpet/blob/master/PRIVACY.md");
+        private void OpenGitHub() => Process.Start(new ProcessStartInfo("https://github.com/xammen/BetterTrumpet") { UseShellExecute = true });
+        private void OpenFeedback() => Process.Start(new ProcessStartInfo("https://github.com/xammen/BetterTrumpet/discussions") { UseShellExecute = true });
+        private void OpenBugReport() => Process.Start(new ProcessStartInfo("https://github.com/xammen/BetterTrumpet/issues") { UseShellExecute = true });
     }
 }

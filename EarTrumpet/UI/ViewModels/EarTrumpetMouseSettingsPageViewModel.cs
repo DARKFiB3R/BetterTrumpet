@@ -25,6 +25,13 @@ namespace EarTrumpet.UI.ViewModels
             set => _settings.UseLogarithmicVolume = value;
         }
 
+        // Volume tick sound effect
+        public bool UseVolumeTickSound
+        {
+            get => _settings.UseVolumeTickSound;
+            set => _settings.UseVolumeTickSound = value;
+        }
+
         private readonly AppSettings _settings;
 
         public EarTrumpetMouseSettingsPageViewModel(AppSettings settings) : base(null)

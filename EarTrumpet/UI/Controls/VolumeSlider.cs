@@ -1,5 +1,7 @@
 using System;
 using System.ComponentModel;
+using System.IO;
+using System.Media;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -23,7 +25,13 @@ namespace EarTrumpet.UI.Controls
         
         // Check if smooth animation is enabled in settings
         private bool IsSmoothAnimationEnabled => App.Settings?.UseSmoothVolumeAnimation ?? true;
-        
+
+        // Sound effect tracking
+        private double _lastSoundValue = -1;
+        private DateTime _lastSoundTime = DateTime.MinValue;
+        private const int SoundThrottleMs = 50; // Min time between sounds
+        private static SoundPlayer _tickPlayer; // Static to reuse across sliders
+
         public float PeakValue1
         {
             get { return (float)this.GetValue(PeakValue1Property); }
@@ -683,8 +691,20 @@ namespace EarTrumpet.UI.Controls
 
         private void OnMouseWheel(object sender, MouseWheelEventArgs e)
         {
+            var oldValue = Value;
             var amount = Math.Sign(e.Delta) * 2.0;
             ChangePositionByAmount(amount);
+
+            // Play tick sound when scrolling
+            try
+            {
+                if (Math.Abs(Value - oldValue) > 0.5)
+                {
+                    PlayVolumeTickSound(Value);
+                }
+            }
+            catch { /* Ignore sound errors */ }
+
             e.Handled = true;
         }
 
@@ -710,6 +730,22 @@ namespace EarTrumpet.UI.Controls
             }
         }
 
+        protected override void OnValueChanged(double oldValue, double newValue)
+        {
+            base.OnValueChanged(oldValue, newValue);
+
+            // Play tick sound when value changes (only if user is interacting)
+            // Check if we're actually dragging to avoid sound on programmatic changes
+            try
+            {
+                if (_isDragging && Math.Abs(newValue - oldValue) > 0.5)
+                {
+                    PlayVolumeTickSound(newValue);
+                }
+            }
+            catch { /* Ignore sound errors */ }
+        }
+
         public void ChangePositionByAmount(double amount)
         {
             Value = Bound(Value + amount);
@@ -718,6 +754,50 @@ namespace EarTrumpet.UI.Controls
         public double Bound(double val)
         {
             return Math.Max(Minimum, Math.Min(Maximum, val));
+        }
+
+        private void PlayVolumeTickSound(double newValue)
+        {
+            // Check if tick sound is enabled in settings
+            if (App.Settings?.UseVolumeTickSound != true)
+                return;
+
+            // Throttle sounds to avoid overwhelming audio feedback
+            var now = DateTime.UtcNow;
+            if ((now - _lastSoundTime).TotalMilliseconds < SoundThrottleMs)
+                return;
+
+            // Only play if value actually changed by a meaningful amount
+            if (_lastSoundValue >= 0 && Math.Abs(newValue - _lastSoundValue) < 1)
+                return;
+
+            _lastSoundTime = now;
+            _lastSoundValue = newValue;
+
+            try
+            {
+                // Initialize SoundPlayer if needed
+                if (_tickPlayer == null)
+                {
+                    // Load WAV from embedded resources
+                    var streamResourceInfo = Application.GetResourceStream(new Uri("pack://application:,,,/Assets/tick.wav"));
+                    if (streamResourceInfo != null)
+                    {
+                        _tickPlayer = new SoundPlayer(streamResourceInfo.Stream);
+                        _tickPlayer.Load(); // Preload to avoid delays
+                    }
+                }
+
+                // Play the sound (async, non-blocking)
+                if (_tickPlayer != null)
+                {
+                    _tickPlayer.Play();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"VolumeSlider: Failed to play tick sound — {ex.Message}");
+            }
         }
     }
 }

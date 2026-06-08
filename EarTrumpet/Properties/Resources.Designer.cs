@@ -2679,5 +2679,26 @@ namespace EarTrumpet.Properties {
         public static string ColorLabelPreview {
             get { return ResourceManager.GetString("ColorLabelPreview", resourceCulture); }
         }
+        public static string AboutDeveloper {
+            get { return ResourceManager.GetString("AboutDeveloper", resourceCulture); }
+        }
+        public static string AboutFork {
+            get { return ResourceManager.GetString("AboutFork", resourceCulture); }
+        }
+        public static string AboutGitHub {
+            get { return ResourceManager.GetString("AboutGitHub", resourceCulture); }
+        }
+        public static string AboutFeedback {
+            get { return ResourceManager.GetString("AboutFeedback", resourceCulture); }
+        }
+        public static string AboutReportBug {
+            get { return ResourceManager.GetString("AboutReportBug", resourceCulture); }
+        }
+        public static string SettingsVolumeTickSound {
+            get { return ResourceManager.GetString("SettingsVolumeTickSound", resourceCulture); }
+        }
+        public static string SettingsVolumeTickSoundTip {
+            get { return ResourceManager.GetString("SettingsVolumeTickSoundTip", resourceCulture); }
+        }
     }
 }
