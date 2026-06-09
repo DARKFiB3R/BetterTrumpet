@@ -18,13 +18,13 @@ namespace EarTrumpet.UI.Views
     {
         private const string GitHubApiUrl = "https://api.github.com/repos/xammen/BetterTrumpet/releases/latest";
 
-        private static readonly Brush _textPrimary;
-        private static readonly Brush _textSecondary;
-        private static readonly Brush _textMuted;
-        private static readonly Brush _surfaceBrush;
-        private static readonly Brush _cardBorder;
-        private static readonly Brush _divider;
-        private static readonly Brush _accentBrush;
+        private static readonly System.Windows.Media.Brush _textPrimary;
+        private static readonly System.Windows.Media.Brush _textSecondary;
+        private static readonly System.Windows.Media.Brush _textMuted;
+        private static readonly System.Windows.Media.Brush _surfaceBrush;
+        private static readonly System.Windows.Media.Brush _cardBorder;
+        private static readonly System.Windows.Media.Brush _divider;
+        private static readonly System.Windows.Media.Brush _accentBrush;
 
         static ChangelogWindow()
         {
@@ -160,6 +160,7 @@ namespace EarTrumpet.UI.Views
                 LineHeight = 22,
                 Margin = new Thickness(0, 0, 0, 24),
             };
+            tb.SetResourceReference(TextBlock.FontFamilyProperty, new FontFamily("Segoe UI Variable Text, Segoe UI"));
 
             ContentPanel.Children.Add(tb);
         }
@@ -176,7 +177,7 @@ namespace EarTrumpet.UI.Views
                     Margin = new Thickness(20, 16, 20, 0),
                 };
 
-                header.Children.Add(new TextBlock
+                var glyph = new TextBlock
                 {
                     Text = GetSectionGlyph(title),
                     FontFamily = new FontFamily("Segoe MDL2 Assets"),
@@ -184,16 +185,19 @@ namespace EarTrumpet.UI.Views
                     Foreground = _accentBrush,
                     VerticalAlignment = VerticalAlignment.Center,
                     Margin = new Thickness(0, 0, 10, 0),
-                });
+                };
+                header.Children.Add(glyph);
 
-                header.Children.Add(new TextBlock
+                var titleBlock = new TextBlock
                 {
                     Text = title,
                     FontSize = 16,
                     FontWeight = FontWeights.SemiBold,
+                    FontFamily = new FontFamily("Segoe UI Variable Display, Segoe UI"),
                     Foreground = _textPrimary,
                     VerticalAlignment = VerticalAlignment.Center,
-                });
+                };
+                header.Children.Add(titleBlock);
 
                 root.Children.Add(header);
 
@@ -227,6 +231,7 @@ namespace EarTrumpet.UI.Views
             var tb = new TextBlock
             {
                 FontSize = 13,
+                FontFamily = new FontFamily("Segoe UI Variable Text, Segoe UI"),
                 Foreground = _textMuted,
                 TextWrapping = TextWrapping.Wrap,
                 LineHeight = 20,
@@ -262,6 +267,7 @@ namespace EarTrumpet.UI.Views
             var textBlock = new TextBlock
             {
                 FontSize = 14,
+                FontFamily = new FontFamily("Segoe UI Variable Text, Segoe UI"),
                 Foreground = _textSecondary,
                 TextWrapping = TextWrapping.Wrap,
                 LineHeight = 22,
@@ -339,6 +345,7 @@ namespace EarTrumpet.UI.Views
             {
                 Text = Properties.Resources.ChangelogLoading,
                 FontSize = 14,
+                FontFamily = new FontFamily("Segoe UI Variable Text, Segoe UI"),
                 Foreground = _textMuted,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Margin = new Thickness(0, 40, 0, 0),
@@ -351,6 +358,7 @@ namespace EarTrumpet.UI.Views
             {
                 Text = message,
                 FontSize = 14,
+                FontFamily = new FontFamily("Segoe UI Variable Text, Segoe UI"),
                 Foreground = _textSecondary,
                 TextWrapping = TextWrapping.Wrap,
                 HorizontalAlignment = HorizontalAlignment.Center,

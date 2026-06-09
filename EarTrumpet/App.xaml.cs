@@ -549,6 +549,22 @@ namespace EarTrumpet
             }
         }
 
+        private void ShowOnboardingManually()
+        {
+            Trace.WriteLine($"App ShowOnboardingManually");
+            var vm = new OnboardingViewModel(Settings, _deviceManager);
+            var window = new OnboardingWindow { DataContext = vm };
+            vm.Completed += (s, e) => window.Close();
+            window.Show();
+        }
+
+        private void ShowChangelogManually()
+        {
+            Trace.WriteLine($"App ShowChangelogManually");
+            var window = new UI.Views.ChangelogWindow();
+            window.Show();
+        }
+
         private void DisplayChangelogIfUpdated()
         {
             var currentVersion = App.PackageVersion?.ToString() ?? "";
@@ -746,6 +762,10 @@ namespace EarTrumpet
                 {
                     new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.FullWindowTitleText, Command = new RelayCommand(_mixerWindow.OpenOrBringToFront) },
                     new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.SettingsWindowText, Command = new RelayCommand(_settingsWindow.OpenOrBringToFront) },
+                    new ContextMenuSeparator(),
+                    new ContextMenuItem { DisplayName = "Show onboarding", Glyph = "\xE7BE", Command = new RelayCommand(ShowOnboardingManually) },
+                    new ContextMenuItem { DisplayName = "What's new", Glyph = "\xE8F1", Command = new RelayCommand(ShowChangelogManually) },
+                    new ContextMenuSeparator(),
                     new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.CheckForUpdatesText, Glyph = "\xE895", Command = new RelayCommand(CheckForUpdatesFromTray) },
                     new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.ContextMenuExitTitle, Command = new RelayCommand(Shutdown) },
                 });

@@ -68,6 +68,12 @@ namespace EarTrumpet.UI.Views
                 UpdateProgressBar();
                 UpdateStepDots(newPage);
                 _lastPage = newPage;
+
+                // Update theme card selection when entering page 1
+                if (newPage == 1)
+                {
+                    UpdateThemeCardSelection();
+                }
             }
         }
 
