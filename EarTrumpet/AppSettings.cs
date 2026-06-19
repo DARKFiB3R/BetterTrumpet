@@ -1180,7 +1180,7 @@ namespace EarTrumpet
                     {
                         if (value)
                         {
-                            var exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                            var exePath = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName ?? System.Reflection.Assembly.GetExecutingAssembly().Location;
                             key?.SetValue(StartupValueName, $"\"{exePath}\"");
                         }
                         else
