@@ -5,7 +5,7 @@ description: Control BetterTrumpet from an AI agent through the `bt` command-lin
 
 # BetterTrumpet Agent Skill
 
-BetterTrumpet is a Windows per-app volume mixer with a JSON CLI exposed through the `bt` command. This skill teaches an AI agent how to safely translate natural-language audio requests into BetterTrumpet commands.
+BetterTrumpet is a Windows per-app volume mixer with a JSON CLI exposed through the `bt` command. Current public line: BetterTrumpet 3.1.0 on `master` / `migration/net8`. This skill teaches an AI agent how to safely translate natural-language audio requests into BetterTrumpet commands.
 
 Use this skill when the user asks for actions like:
 
@@ -40,6 +40,7 @@ If the preset does not exist, explain that no `Discord` preset was found and off
 
 - BetterTrumpet must be running for remote commands.
 - Use the `bt` command directly. `bt.cmd` is the supported automation wrapper and is responsible for finding `BetterTrumpet.exe`, waiting for the WPF/GUI process, and printing captured JSON output.
+- Installed builds normally add the install directory to PATH when the installer PATH option is selected. Portable builds can run the repo/root or portable-folder `bt.cmd` directly.
 - CLI responses are JSON and should be parsed or inspected before reporting success.
 - If `bt` is not found, the user should install BetterTrumpet with the PATH option or run the repo/root `bt.cmd` directly.
 - If `bt` returns an error, report that error instead of falling back to ad-hoc executable calls.
@@ -103,7 +104,7 @@ Expected success shape:
 ```json
 {
   "status": "ok",
-  "version": "3.0.10"
+  "version": "3.1.0"
 }
 ```
 
@@ -303,6 +304,8 @@ Delete a preset only when explicitly requested:
 bt delete Discord
 ```
 
+Additional preset and rule helpers exist in the 3.1.0 line, including `resolve-apps`, `rule-preview`, `rule-apply`, `preset-create`, and aliases such as `save`, `apply`, `mode`, and `presets`. Prefer `docs/CLI.md` in the repo as the source of truth for exact syntax when implementing or documenting CLI changes.
+
 ## Natural Language Mapping
 
 Use these examples as translation rules. When the user asks for several independent changes at once, prefer `bt batch` so the agent receives one JSON response containing every sub-result.
@@ -499,3 +502,9 @@ bt save Discord --apps-only
 This skill is intentionally plain Markdown with front matter so it can be reused by agent systems that support skill files, prompt snippets, command recipes, or project instructions.
 
 For OpenCode, Hermes, Claude, or similar agents, install or reference this file as the instruction source for BetterTrumpet audio control. The agent only needs shell command execution and access to the `bt` command.
+
+## Project State Notes
+
+- BetterTrumpet 3.1.0 is distributed through GitHub Releases, Chocolatey, Winget, and the Microsoft Store submission path.
+- GitHub/Chocolatey/Winget builds are self-contained x86 Release builds so users do not need the x86 .NET 8 runtime.
+- Do not assume npm is a first-class install channel; if used, it should be a wrapper that downloads GitHub assets.
