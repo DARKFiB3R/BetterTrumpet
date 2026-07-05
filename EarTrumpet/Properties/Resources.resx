@@ -344,6 +344,9 @@ Open [https://eartrumpet.app/jmp/fixfonts] now?</value>
   <data name="ToggleMuteToolTip" xml:space="preserve">
     <value>Toggle mute</value>
   </data>
+  <data name="BalanceToolTip" xml:space="preserve">
+    <value>Left/right balance</value>
+  </data>
   <data name="PrivacyPolicyText" xml:space="preserve">
     <value>Privacy policy</value>
   </data>

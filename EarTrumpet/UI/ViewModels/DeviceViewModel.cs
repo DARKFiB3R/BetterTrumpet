@@ -4,6 +4,7 @@ using EarTrumpet.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 
@@ -87,6 +88,8 @@ namespace EarTrumpet.UI.ViewModels
         private bool _isDisplayNameVisible;
         private DeviceIconKind _iconKind;
         private int _hiddenAppsCount;
+        private readonly List<IAudioDeviceChannel> _balanceChannels;
+        private bool _isApplyingBalance;
 
         public DeviceViewModel(DeviceCollectionViewModel parent, IAudioDeviceManager deviceManager, AppSettings settings, IAudioDevice device) : base(device)
         {
@@ -99,6 +102,24 @@ namespace EarTrumpet.UI.ViewModels
             _device.PropertyChanged += OnPropertyChanged;
             _device.Groups.CollectionChanged += OnCollectionChanged;
 
+            // Balance only makes sense for a conventional stereo pair. Devices with a
+            // different channel count (mono mics, 5.1/7.1 speaker sets, etc.) simply
+            // don't expose the control.
+            if (device is IAudioDeviceWindowsAudio windowsAudioDevice)
+            {
+                var channels = windowsAudioDevice.Channels?.ToList();
+                if (channels != null && channels.Count == 2)
+                {
+                    _balanceChannels = channels;
+                    foreach (var channel in _balanceChannels)
+                    {
+                        channel.PropertyChanged += OnBalanceChannelPropertyChanged;
+                    }
+
+                    ApplyPersistedBalance();
+                }
+            }
+
             RebuildAppsCollection();
             RefreshHiddenCount();
 
@@ -109,6 +130,100 @@ namespace EarTrumpet.UI.ViewModels
         {
             _device.PropertyChanged -= OnPropertyChanged;
             _device.Groups.CollectionChanged -= OnCollectionChanged;
+
+            if (_balanceChannels != null)
+            {
+                foreach (var channel in _balanceChannels)
+                {
+                    channel.PropertyChanged -= OnBalanceChannelPropertyChanged;
+                }
+            }
+        }
+
+        public bool IsBalanceSupported => _balanceChannels != null;
+
+        // -100 (full left) .. 0 (centered) .. +100 (full right).
+        // At balance 0 both channels sit at 100%; skewing towards one side proportionally
+        // pulls the *other* channel down while keeping the louder channel at 100%, matching
+        // the behavior of the Windows "Levels" balance control.
+        public double Balance
+        {
+            get
+            {
+                if (_balanceChannels == null)
+                {
+                    return 0;
+                }
+
+                var left = _balanceChannels[0].Level;
+                var right = _balanceChannels[1].Level;
+
+                if (Math.Abs(left - right) < 0.0001f)
+                {
+                    return 0;
+                }
+
+                return left > right
+                    ? -(1.0 - right) * 100.0   // skewed left: right channel is the one pulled down
+                    : (1.0 - left) * 100.0;    // skewed right: left channel is the one pulled down
+            }
+            set
+            {
+                if (_balanceChannels == null)
+                {
+                    return;
+                }
+
+                var clamped = Math.Max(-100.0, Math.Min(100.0, value));
+
+                float left, right;
+                if (clamped >= 0)
+                {
+                    right = 1f;
+                    left = 1f - (float)(clamped / 100.0);
+                }
+                else
+                {
+                    left = 1f;
+                    right = 1f - (float)(-clamped / 100.0);
+                }
+
+                _isApplyingBalance = true;
+                try
+                {
+                    _balanceChannels[0].Level = left;
+                    _balanceChannels[1].Level = right;
+                }
+                finally
+                {
+                    _isApplyingBalance = false;
+                }
+
+                _settings?.SetBalanceForDevice(_device.Id, clamped);
+                RaisePropertyChanged(nameof(Balance));
+            }
+        }
+
+        private void ApplyPersistedBalance()
+        {
+            var saved = _settings?.GetBalanceForDevice(_device.Id) ?? 0;
+            if (Math.Abs(saved) > 0.0001)
+            {
+                Balance = saved;
+            }
+        }
+
+        private void OnBalanceChannelPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            // Reflect changes made outside of this control (e.g. the Windows volume mixer's
+            // own Levels tab, or another instance of the app) without re-persisting them as
+            // if the user had just dragged the slider here.
+            if (_isApplyingBalance || e.PropertyName != nameof(IAudioDeviceChannel.Level))
+            {
+                return;
+            }
+
+            RaisePropertyChanged(nameof(Balance));
         }
 
         private void OnPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
