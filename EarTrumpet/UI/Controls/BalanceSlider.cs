@@ -5,49 +5,91 @@ using System.Windows.Input;
 
 namespace EarTrumpet.UI.Controls
 {
-    // A Slider that behaves exactly like a normal Slider everywhere, except for a small
-    // magnetic detent right at its center value: dragging into that zone snaps straight
-    // to center, and dragging back out requires passing a slightly wider threshold before
-    // it lets go, giving a small "pop" feel on release rather than a mushy, ambiguous edge.
+    // A Slider with a magnetic center detent: outside a small zone around its center
+    // value it behaves like an ordinary slider, but dragging into that zone locks the
+    // value at center and holds it there - genuinely nothing changes, no matter how
+    // far you keep dragging - until the pointer moves back out past a slightly wider
+    // release threshold, at which point it lets go and resumes tracking the pointer
+    // immediately from wherever it now is.
     //
-    // Outside of that narrow zone, values pass through completely untouched — full
-    // precision and the original feel are preserved across the rest of the range.
-    //
-    // Keyboard nudges and programmatic sets (e.g. restoring a persisted value on load)
-    // are intentionally left alone; the detent only applies to live pointer interaction.
+    // This computes value directly from absolute pointer position on every move (the
+    // same technique the app's own VolumeSlider control uses), rather than relying on
+    // the default Slider/Thumb's relative drag-delta accumulation. That accumulation
+    // is what makes a true "frozen while held" dead zone impossible with a stock
+    // Slider: the internal running total keeps climbing even while the displayed
+    // value is held still, so releasing it produces an unpredictable jump instead of
+    // a clean pop back to wherever the pointer actually is.
     public class BalanceSlider : Slider
     {
-        // How close to center a drag must get to snap in.
         private const double SnapInZone = 4.0;
+        private const double SnapOutThreshold = 10.0;
 
-        // How far a drag must move back out before the snap releases. Wider than
-        // SnapInZone on purpose - that gap is what creates the felt "pop" on release
-        // instead of the value flickering in and out right at one boundary.
-        private const double SnapOutThreshold = 8.0;
-
-        private bool _isInteracting;
+        private bool _isDragging;
         private bool _isSnapped;
 
         static BalanceSlider()
         {
-            // Reuse whatever Style the app already applies to plain Sliders elsewhere,
-            // rather than falling back to the unstyled default OS look.
-            DefaultStyleKeyProperty.OverrideMetadata(typeof(BalanceSlider), new FrameworkPropertyMetadata(typeof(Slider)));
-
-            ValueProperty.OverrideMetadata(typeof(BalanceSlider),
-                new FrameworkPropertyMetadata(0.0, null, CoerceValue));
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(BalanceSlider), new FrameworkPropertyMetadata(typeof(BalanceSlider)));
         }
 
-        private static object CoerceValue(DependencyObject d, object baseValue)
+        protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
         {
-            var slider = (BalanceSlider)d;
-            var raw = (double)baseValue;
-
-            return slider._isInteracting ? slider.ApplyMagneticCenter(raw) : raw;
+            _isDragging = true;
+            _isSnapped = false;
+            CaptureMouse();
+            UpdateValueFromPoint(e.GetPosition(this));
+            Focus();
+            e.Handled = true;
         }
 
-        private double ApplyMagneticCenter(double raw)
+        protected override void OnMouseMove(MouseEventArgs e)
         {
+            base.OnMouseMove(e);
+
+            if (_isDragging)
+            {
+                UpdateValueFromPoint(e.GetPosition(this));
+            }
+        }
+
+        protected override void OnPreviewMouseLeftButtonUp(MouseButtonEventArgs e)
+        {
+            _isDragging = false;
+            ReleaseMouseCapture();
+            e.Handled = true;
+        }
+
+        protected override void OnPreviewTouchDown(TouchEventArgs e)
+        {
+            _isDragging = true;
+            _isSnapped = false;
+            CaptureTouch(e.TouchDevice);
+            UpdateValueFromPoint(e.GetTouchPoint(this).Position);
+            e.Handled = true;
+        }
+
+        protected override void OnPreviewTouchUp(TouchEventArgs e)
+        {
+            _isDragging = false;
+            ReleaseTouchCapture(e.TouchDevice);
+            e.Handled = true;
+        }
+
+        protected override void OnLostMouseCapture(MouseEventArgs e)
+        {
+            base.OnLostMouseCapture(e);
+            _isDragging = false;
+        }
+
+        private void UpdateValueFromPoint(Point point)
+        {
+            if (ActualWidth <= 0)
+            {
+                return;
+            }
+
+            var percent = Math.Max(0.0, Math.Min(1.0, point.X / ActualWidth));
+            var raw = Minimum + percent * (Maximum - Minimum);
             var center = (Maximum + Minimum) / 2.0;
             var distance = Math.Abs(raw - center);
 
@@ -56,50 +98,21 @@ namespace EarTrumpet.UI.Controls
                 if (distance >= SnapOutThreshold)
                 {
                     _isSnapped = false;
-                    return raw; // pop free and track the pointer immediately, no lag
+                    Value = raw; // pop free, track the pointer immediately
                 }
-                return center;
+                // Still held by the center - the pointer can move freely within the
+                // zone and nothing happens, exactly as if the slider were locked.
+                return;
             }
 
             if (distance <= SnapInZone)
             {
                 _isSnapped = true;
-                return center;
+                Value = center;
+                return;
             }
 
-            return raw;
-        }
-
-        protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
-        {
-            _isInteracting = true;
-            _isSnapped = false;
-            base.OnPreviewMouseLeftButtonDown(e);
-        }
-
-        protected override void OnPreviewMouseLeftButtonUp(MouseButtonEventArgs e)
-        {
-            base.OnPreviewMouseLeftButtonUp(e);
-            _isInteracting = false;
-        }
-
-        protected override void OnPreviewTouchDown(TouchEventArgs e)
-        {
-            _isInteracting = true;
-            _isSnapped = false;
-            base.OnPreviewTouchDown(e);
-        }
-
-        protected override void OnPreviewTouchUp(TouchEventArgs e)
-        {
-            base.OnPreviewTouchUp(e);
-            _isInteracting = false;
-        }
-
-        protected override void OnLostMouseCapture(MouseEventArgs e)
-        {
-            base.OnLostMouseCapture(e);
-            _isInteracting = false;
+            Value = raw;
         }
     }
 }
