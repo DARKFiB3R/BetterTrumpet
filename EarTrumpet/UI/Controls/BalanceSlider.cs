@@ -21,8 +21,8 @@ namespace EarTrumpet.UI.Controls
     // a clean pop back to wherever the pointer actually is.
     public class BalanceSlider : Slider
     {
-        private const double SnapInZone = 4.0;
-        private const double SnapOutThreshold = 10.0;
+        private const double SnapInZone = 6.0;
+        private const double SnapOutThreshold = 18.0;
 
         private bool _isDragging;
         private bool _isSnapped;
