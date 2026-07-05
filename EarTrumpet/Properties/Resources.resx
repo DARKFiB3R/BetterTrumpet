@@ -347,6 +347,9 @@ Open [https://eartrumpet.app/jmp/fixfonts] now?</value>
   <data name="BalanceToolTip" xml:space="preserve">
     <value>Left/right balance</value>
   </data>
+  <data name="BalanceResetToolTip" xml:space="preserve">
+    <value>Reset to center</value>
+  </data>
   <data name="PrivacyPolicyText" xml:space="preserve">
     <value>Privacy policy</value>
   </data>

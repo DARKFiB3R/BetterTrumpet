@@ -1,12 +1,14 @@
 using EarTrumpet.DataModel.Audio;
 using EarTrumpet.DataModel.WindowsAudio;
 using EarTrumpet.Extensions;
+using EarTrumpet.UI.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Windows.Input;
 
 namespace EarTrumpet.UI.ViewModels
 {
@@ -98,6 +100,7 @@ namespace EarTrumpet.UI.ViewModels
             _device = device;
             _parent = new WeakReference<DeviceCollectionViewModel>(parent);
             Apps = new ObservableCollection<IAppItemViewModel>();
+            ResetBalance = new RelayCommand(() => Balance = 0);
 
             _device.PropertyChanged += OnPropertyChanged;
             _device.Groups.CollectionChanged += OnCollectionChanged;
@@ -141,6 +144,8 @@ namespace EarTrumpet.UI.ViewModels
         }
 
         public bool IsBalanceSupported => _balanceChannels != null;
+
+        public ICommand ResetBalance { get; }
 
         // -100 (full left) .. 0 (centered) .. +100 (full right).
         // At balance 0 both channels sit at 100%; skewing towards one side proportionally
