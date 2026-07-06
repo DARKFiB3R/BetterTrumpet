@@ -165,7 +165,6 @@
                                 Minimum="-100"
                                 Maximum="100"
                                 IsSnapToTickEnabled="False"
-                                IsTabStop="True"
                                 SmallChange="1"
                                 LargeChange="10"
                                 Value="{Binding Device.Balance, Mode=TwoWay}"
