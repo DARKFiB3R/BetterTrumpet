@@ -13,14 +13,14 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
         private readonly Dispatcher _dispatcher;
         private readonly int _afChannelVolumesOffset;
 
-        public AudioDeviceChannelCollection(IAudioEndpointVolume deviceVolume, Dispatcher dispatcher)
+        public AudioDeviceChannelCollection(IAudioEndpointVolume deviceVolume, Dispatcher dispatcher, Action onBeforeChannelWrite = null)
         {
             _dispatcher = dispatcher;
 
             var ret = new List<AudioDeviceChannel>();
             for (uint i = 0; i < deviceVolume.GetChannelCount(); i++)
             {
-                ret.Add(new AudioDeviceChannel(deviceVolume, i));
+                ret.Add(new AudioDeviceChannel(deviceVolume, i, onBeforeChannelWrite));
             }
             Channels = ret;
 

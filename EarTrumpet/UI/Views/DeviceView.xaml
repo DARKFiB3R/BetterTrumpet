@@ -144,6 +144,7 @@
 
                         <TextBlock Grid.Column="0"
                                    Text="L/R"
+                                   FontSize="18"
                                    Cursor="Hand"
                                    MouseLeftButtonUp="BalanceLabel_MouseLeftButtonUp"
                                    ToolTipService.ToolTip="{x:Static resx:Resources.BalanceResetToolTip}"

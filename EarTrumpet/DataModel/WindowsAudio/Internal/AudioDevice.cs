@@ -22,6 +22,7 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
         private readonly WeakReference<IAudioDeviceManager> _deviceManager;
         private readonly string _id;
         private readonly AudioDeviceChannelCollection _channels;
+        private bool _suppressNextVolumeFromNotify;
         private IMMDevice _device;
         private string _displayName;
         private string _iconPath;
@@ -50,7 +51,7 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
                 _isMuted = _deviceVolume.GetMute() != 0;
                 _isRegistered = true;
                 _meter = device.Activate<IAudioMeterInformation>();
-                _channels = new AudioDeviceChannelCollection(_deviceVolume, _dispatcher);
+                _channels = new AudioDeviceChannelCollection(_deviceVolume, _dispatcher, () => _suppressNextVolumeFromNotify = true);
                 _sessions = new AudioDeviceSessionCollection(this, _device, _dispatcher);
                 _sessionFilter = new FilteredCollectionChain<IAudioDeviceSession>(_sessions.Sessions, _dispatcher);
                 Groups = _sessionFilter.Items;
@@ -81,8 +82,22 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
         void IAudioEndpointVolumeCallback.OnNotify(IntPtr pNotify)
         {
             var data = Marshal.PtrToStructure<AUDIO_VOLUME_NOTIFICATION_DATA>(pNotify);
-            _volume = data.fMasterVolume;
-            _isMuted = data.bMuted != 0;
+
+            if (_suppressNextVolumeFromNotify)
+            {
+                // This notification was triggered purely by our own per-channel write
+                // (e.g. from the balance control). The notification still reports a
+                // full state snapshot including a master-volume field, but on some
+                // endpoints that field isn't independent of the channel values, so we
+                // deliberately don't let it overwrite what we already know the master
+                // volume and mute state to be.
+                _suppressNextVolumeFromNotify = false;
+            }
+            else
+            {
+                _volume = data.fMasterVolume;
+                _isMuted = data.bMuted != 0;
+            }
 
             _channels.OnNotify(pNotify, data);
 
