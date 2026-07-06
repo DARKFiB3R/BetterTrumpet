@@ -109,6 +109,13 @@ private readonly Action _returnFocusToTray;
         // ever interacted with it, making every subsequent click look like a fresh "open"
         // instead of a "close" - since by then it's already hidden again.
         private DateTime _lastOpenedAt = DateTime.MinValue;
+        // Guards against a tray-icon click producing more than one OpenFlyout invocation in
+        // quick succession (e.g. a duplicate invoke, or a race between deactivation and the
+        // click handler resolving in an unexpected order). Without this, a spurious repeat
+        // invocation can fall through to the Closing_Stage1/2 cases below and get treated as
+        // "reopen after this finishes closing" - which is what makes a normal close-click
+        // look like the flyout just reopens instead of staying closed.
+        private DateTime _lastMouseInvokeAt = DateTime.MinValue;
         private MouseHook _mh;
         private Rect _winRect;
 
@@ -542,6 +549,20 @@ private readonly Action _returnFocusToTray;
 
         public void OpenFlyout(InputType inputType)
         {
+            if (inputType == InputType.Mouse)
+            {
+                var now = DateTime.UtcNow;
+                if ((now - _lastMouseInvokeAt) < TimeSpan.FromMilliseconds(250))
+                {
+                    // A tray-icon click arriving again this quickly is almost certainly a
+                    // duplicate/race with the same physical click, not a genuine second
+                    // click - absorb it outright rather than letting it fall through to
+                    // state-specific handling that can otherwise misread it as "reopen".
+                    return;
+                }
+                _lastMouseInvokeAt = now;
+            }
+
             // A mouse click on the tray icon while the flyout is open deactivates it first
             // (light dismiss closes it), then this click is delivered. Without this guard the
             // click would re-open the just-closed flyout. If the click lands right after a
