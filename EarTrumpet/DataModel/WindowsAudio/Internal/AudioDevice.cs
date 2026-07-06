@@ -132,6 +132,7 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
                     }
 
                     IsMuted = App.Settings.UseLogarithmicVolume ? _volume <= (1 / 100f).ToLogVolume() : _volume.ToVolumeInt() == 0;
+                    RaisePropertyChanged(nameof(Volume));
                 }
             }
         }
