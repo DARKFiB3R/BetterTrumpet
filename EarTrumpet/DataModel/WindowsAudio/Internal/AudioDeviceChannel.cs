@@ -1,5 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Threading;
 using EarTrumpet.Interop.MMDeviceAPI;
 
 namespace EarTrumpet.DataModel.WindowsAudio.Internal
@@ -24,6 +26,7 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
             {
                 if (_level != value)
                 {
+                    Trace.WriteLine($"[BALTRACE] AudioDeviceChannel.Level SET idx={_index} old={_level} new={value} tid={Thread.CurrentThread.ManagedThreadId}");
                     Guid dummy = Guid.Empty;
                     _deviceVolume.SetChannelVolumeLevelScalar(_index, value, ref dummy);
 
@@ -33,13 +36,25 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
             }
         }
 
-        internal void OnNotify(float newLevel)
+        // Returns whether the change is large enough to be a genuine external
+        // change rather than float round-trip noise from the OS. Does not raise
+        // PropertyChanged - callers batch that separately (see
+        // AudioDeviceChannelCollection.OnNotify) so a listener reacting to one
+        // channel's change always sees every channel's already-applied value.
+        internal bool ApplyNotifiedLevel(float newLevel)
         {
-            if (newLevel != _level)
+            var changed = Math.Abs(newLevel - _level) > 0.0001f;
+            if (changed)
             {
-                _level = newLevel;
-                RaisePropertyChanged(nameof(Level));
+                Trace.WriteLine($"[BALTRACE] AudioDeviceChannel.OnNotify idx={_index} old={_level} new={newLevel} tid={Thread.CurrentThread.ManagedThreadId}");
             }
+            _level = newLevel;
+            return changed;
+        }
+
+        internal void RaiseLevelChanged()
+        {
+            RaisePropertyChanged(nameof(Level));
         }
     }
 }
