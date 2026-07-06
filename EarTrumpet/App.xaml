@@ -462,8 +462,7 @@
                                 <Border Height="4"
                                         VerticalAlignment="Center"
                                         CornerRadius="2"
-                                        Theme:Brush.Background="Text"
-                                        Opacity="0.25" />
+                                        Theme:Brush.Background=":Theme=Control{Theme}SliderTrackFillDisabled, :HighContrast=ControlText, Flyout:Theme=FlyoutThemeTrackRightBackground, Flyout:HighContrast=ControlText" />
                                 <Border Width="2"
                                         Height="10"
                                         HorizontalAlignment="Center"
@@ -473,12 +472,12 @@
                                         Theme:Brush.Background="Theme=SystemAccent, HighContrast=ControlText" />
                                 <Track Name="PART_Track" VerticalAlignment="Center" IsHitTestVisible="False">
                                     <Track.Thumb>
-                                        <Thumb Name="SliderThumb" IsHitTestVisible="False">
-                                            <Thumb.Style>
-                                                <Style BasedOn="{StaticResource SliderThumbStyle}" TargetType="{x:Type Thumb}">
-                                                    <Setter Property="Theme:Brush.Foreground" Value="Theme=SystemAccent, HighContrast=ControlText" />
-                                                </Style>
-                                            </Thumb.Style>
+                                        <Thumb Name="SliderThumb" Width="16" Height="16" IsHitTestVisible="False">
+                                            <Thumb.Template>
+                                                <ControlTemplate TargetType="{x:Type Thumb}">
+                                                    <Ellipse Theme:Brush.Fill="Theme=SystemAccent, HighContrast=ControlText" />
+                                                </ControlTemplate>
+                                            </Thumb.Template>
                                         </Thumb>
                                     </Track.Thumb>
                                 </Track>
