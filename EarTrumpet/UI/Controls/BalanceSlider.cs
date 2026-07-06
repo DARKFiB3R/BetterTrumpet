@@ -126,6 +126,7 @@ namespace EarTrumpet.UI.Controls
             _isSnapped = false;
             CaptureMouse();
             UpdateValueFromPoint(e.GetPosition(this));
+            Focus();
             e.Handled = true;
         }
 
