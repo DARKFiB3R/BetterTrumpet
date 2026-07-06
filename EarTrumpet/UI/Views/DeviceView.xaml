@@ -143,20 +143,17 @@
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Grid.Column="0"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   Opacity="0.6"
-                                   FontSize="12"
                                    Text="L/R"
+                                   FontSize="18"
                                    Cursor="Hand"
                                    MouseLeftButtonUp="BalanceLabel_MouseLeftButtonUp"
                                    ToolTipService.ToolTip="{x:Static resx:Resources.BalanceResetToolTip}"
                                    AutomationProperties.Name="{x:Static resx:Resources.BalanceResetToolTip}">
                             <TextBlock.Style>
-                                <Style TargetType="TextBlock">
+                                <Style BasedOn="{StaticResource DeviceVolumeTextStyle}" TargetType="TextBlock">
                                     <Style.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Opacity" Value="1" />
+                                            <Setter Property="Opacity" Value="0.7" />
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
