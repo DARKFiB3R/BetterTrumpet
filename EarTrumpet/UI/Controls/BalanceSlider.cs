@@ -2,6 +2,8 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using EarTrumpet.UI.ViewModels;
 
 namespace EarTrumpet.UI.Controls
 {
@@ -26,10 +28,81 @@ namespace EarTrumpet.UI.Controls
 
         private bool _isDragging;
         private bool _isSnapped;
+        private Thumb _thumb;
+        private Border _centerTick;
 
         static BalanceSlider()
         {
             DefaultStyleKeyProperty.OverrideMetadata(typeof(BalanceSlider), new FrameworkPropertyMetadata(typeof(BalanceSlider)));
+        }
+
+        public BalanceSlider() : base()
+        {
+            Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            _thumb = GetTemplateChild("SliderThumb") as Thumb;
+            _centerTick = GetTemplateChild("CenterTick") as Border;
+
+            ApplyCustomColors();
+
+            if (App.Settings != null)
+            {
+                App.Settings.CustomSliderColorsChanged += OnCustomSliderColorsChanged;
+            }
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            if (App.Settings != null)
+            {
+                App.Settings.CustomSliderColorsChanged -= OnCustomSliderColorsChanged;
+            }
+        }
+
+        private void OnCustomSliderColorsChanged()
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(ApplyCustomColors));
+                return;
+            }
+            ApplyCustomColors();
+        }
+
+        // Mirrors VolumeSlider.ApplyCustomColors so the balance slider stays visually
+        // consistent with every other slider, whether the person is using the default
+        // theme accent or has picked custom slider colors in Settings.
+        private void ApplyCustomColors()
+        {
+            var settings = App.Settings;
+            if (settings == null || _thumb == null)
+            {
+                return;
+            }
+
+            if (settings.UseCustomSliderColors)
+            {
+                var thumbColor = settings.SliderThumbColor;
+                var brush = new SolidColorBrush(thumbColor != Colors.Transparent ? thumbColor : ThemeRegistry.DefaultAccentColor);
+
+                // Local values win over the Theme:Brush system's own local-value writes
+                // (see the identical note in VolumeSlider.ApplyColorsToVisualElements) -
+                // setting these directly, last, is what makes the override actually stick.
+                _thumb.Foreground = brush;
+                if (_centerTick != null)
+                {
+                    _centerTick.Background = brush;
+                }
+            }
+            else
+            {
+                _thumb.ClearValue(ForegroundProperty);
+                _centerTick?.ClearValue(Border.BackgroundProperty);
+            }
         }
 
         protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
