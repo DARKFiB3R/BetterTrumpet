@@ -146,8 +146,12 @@ namespace EarTrumpet.UI.Controls
             // Initialize peak meter style
             ApplyPeakMeterStyle();
             
-            // Apply custom colors if enabled
-            ApplyCustomColors();
+            // Apply custom colors if enabled — deferred, for the same reason
+            // OnThemeChangedReapplyColors defers: the theme system's own initial
+            // pass runs after Loaded and otherwise wins the priority battle,
+            // leaving the slider showing default (grey) colors until a later
+            // theme change happens to trigger the correctly-deferred re-apply.
+            Dispatcher.BeginInvoke(new Action(ApplyCustomColors), System.Windows.Threading.DispatcherPriority.Loaded);
             
             // Subscribe to settings changes for live preview
             if (App.Settings != null)

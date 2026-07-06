@@ -1,0 +1,42 @@
+diff --git a/EarTrumpet/UI/ViewModels/FlyoutViewModel.cs b/EarTrumpet/UI/ViewModels/FlyoutViewModel.cs
+index f313ecb..a5d3e08 100644
+--- a/EarTrumpet/UI/ViewModels/FlyoutViewModel.cs
++++ b/EarTrumpet/UI/ViewModels/FlyoutViewModel.cs
+@@ -109,13 +109,6 @@ private readonly Action _returnFocusToTray;
+         // ever interacted with it, making every subsequent click look like a fresh "open"
+         // instead of a "close" - since by then it's already hidden again.
+         private DateTime _lastOpenedAt = DateTime.MinValue;
+-        // Guards against a tray-icon click producing more than one OpenFlyout invocation in
+-        // quick succession (e.g. a duplicate invoke, or a race between deactivation and the
+-        // click handler resolving in an unexpected order). Without this, a spurious repeat
+-        // invocation can fall through to the Closing_Stage1/2 cases below and get treated as
+-        // "reopen after this finishes closing" - which is what makes a normal close-click
+-        // look like the flyout just reopens instead of staying closed.
+-        private DateTime _lastMouseInvokeAt = DateTime.MinValue;
+         private MouseHook _mh;
+         private Rect _winRect;
+ 
+@@ -549,22 +542,7 @@ private readonly Action _returnFocusToTray;
+ 
+         public void OpenFlyout(InputType inputType)
+         {
+-            Trace.WriteLine($"[OpenFlyout] {DateTime.UtcNow:HH:mm:ss.fff} ENTER inputType={inputType} State={State} msSinceLastMouseInvoke={(DateTime.UtcNow - _lastMouseInvokeAt).TotalMilliseconds:F0} msSinceLastDeactivated={(DateTime.UtcNow - _lastDeactivatedAt).TotalMilliseconds:F0}");
+-
+-            if (inputType == InputType.Mouse)
+-            {
+-                var now = DateTime.UtcNow;
+-                if ((now - _lastMouseInvokeAt) < TimeSpan.FromMilliseconds(250))
+-                {
+-                    // A tray-icon click arriving again this quickly is almost certainly a
+-                    // duplicate/race with the same physical click, not a genuine second
+-                    // click - absorb it outright rather than letting it fall through to
+-                    // state-specific handling that can otherwise misread it as "reopen".
+-                    Trace.WriteLine($"[OpenFlyout] {DateTime.UtcNow:HH:mm:ss.fff} ABSORBED by 250ms mouse-invoke debounce");
+-                    return;
+-                }
+-                _lastMouseInvokeAt = now;
+-            }
++            Trace.WriteLine($"[OpenFlyout] {DateTime.UtcNow:HH:mm:ss.fff} ENTER inputType={inputType} State={State} msSinceLastDeactivated={(DateTime.UtcNow - _lastDeactivatedAt).TotalMilliseconds:F0}");
+ 
+             // A mouse click on the tray icon while the flyout is open deactivates it first
+             // (light dismiss closes it), then this click is delivered. Without this guard the
