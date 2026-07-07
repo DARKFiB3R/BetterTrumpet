@@ -147,7 +147,7 @@ namespace EarTrumpet.UI.Controls
             ApplyPeakMeterStyle();
             
             // Apply custom colors if enabled
-            ApplyCustomColors();
+            Dispatcher.BeginInvoke(new Action(ApplyCustomColors), System.Windows.Threading.DispatcherPriority.Loaded);
             
             // Subscribe to settings changes for live preview
             if (App.Settings != null)
