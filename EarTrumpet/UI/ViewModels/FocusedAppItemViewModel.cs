@@ -81,6 +81,32 @@ namespace EarTrumpet.UI.ViewModels
                 });
             }
 
+            if (!string.IsNullOrWhiteSpace(app.ExeName))
+            {
+                bool isHardMuted = parent.IsAppHardMuted(app);
+                Toolbar.Insert(0, new ToolbarItemViewModel
+                {
+                    GlyphFontSize = 16,
+                    DisplayName = Properties.Resources.HardMuteAppButtonText,
+                    Glyph = "\uE74F",
+                    Menu = new ObservableCollection<ContextMenuItem>
+                    {
+                        new ContextMenuItem
+                        {
+                            DisplayName = isHardMuted
+                                ? Properties.Resources.HardMuteAppMenuDisableText
+                                : Properties.Resources.HardMuteAppMenuText,
+                            IsChecked = isHardMuted,
+                            Command = new RelayCommand(() =>
+                            {
+                                parent.ToggleHardMuteApp(app);
+                                RequestClose.Invoke();
+                            }),
+                        }
+                    }
+                });
+            }
+
             var contentItems = AddonManager.Host.AppContentItems;
             if (contentItems != null)
             {

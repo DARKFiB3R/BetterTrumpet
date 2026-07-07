@@ -80,6 +80,9 @@ namespace EarTrumpet.DataModel
                 // Volume Profiles (embedded)
                 ["VolumeProfilesJson"] = settings.VolumeProfilesJson,
                 ["ShowQuickTrumpetConfirmation"] = settings.ShowQuickTrumpetConfirmation,
+
+                // Hard-muted apps
+                ["HardMutedAppsJson"] = settings.HardMutedAppsJson,
             };
 
             return data;
@@ -244,6 +247,9 @@ namespace EarTrumpet.DataModel
 
             // Volume Profiles
             TrySet(data, "VolumeProfilesJson", (string v) => settings.VolumeProfilesJson = v);
+
+            // Hard-muted apps
+            TrySet(data, "HardMutedAppsJson", (string v) => settings.HardMutedAppsJson = v);
         }
 
         private static void TrySet<T>(Dictionary<string, object> data, string key, Action<T> setter)

@@ -971,6 +971,24 @@ namespace EarTrumpet.Properties {
             }
         }
 
+        public static string HardMuteAppButtonText {
+            get {
+                return ResourceManager.GetString("HardMuteAppButtonText", resourceCulture);
+            }
+        }
+
+        public static string HardMuteAppMenuText {
+            get {
+                return ResourceManager.GetString("HardMuteAppMenuText", resourceCulture);
+            }
+        }
+
+        public static string HardMuteAppMenuDisableText {
+            get {
+                return ResourceManager.GetString("HardMuteAppMenuDisableText", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Hide this device.
         /// </summary>

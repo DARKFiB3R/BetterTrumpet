@@ -37,6 +37,7 @@ namespace EarTrumpet.UI.ViewModels
             _settings = settings;
             _settings.HiddenAppsChanged += OnHiddenAppsChanged;
             _settings.HiddenDevicesChanged += OnHiddenDevicesChanged;
+            _settings.HardMutedAppsChanged += OnHardMutedAppsChanged;
             _deviceManager = deviceManager;
             _deviceManager.DefaultChanged += OnDefaultChanged;
             _deviceManager.Devices.CollectionChanged += OnCollectionChanged;
@@ -258,6 +259,37 @@ namespace EarTrumpet.UI.ViewModels
         public int GetTotalHiddenAppsCount()
         {
             return AllDevices.Sum(device => device.HiddenAppsCount);
+        }
+
+        public bool IsAppHardMuted(IAppItemViewModel app)
+        {
+            return _settings != null && app != null && _settings.IsAppHardMuted(app.ExeName);
+        }
+
+        public void ToggleHardMuteApp(IAppItemViewModel app)
+        {
+            if (_settings == null || app == null || string.IsNullOrWhiteSpace(app.ExeName))
+            {
+                return;
+            }
+
+            bool newState = !_settings.IsAppHardMuted(app.ExeName);
+            // SetAppHardMuted raises HardMutedAppsChanged, which reapplies the mute to live sessions.
+            _settings.SetAppHardMuted(app.ExeName, newState, app.DisplayName);
+
+            // Disabling hard mute unmutes the app the user is acting on, so it becomes audible again.
+            if (!newState && app.IsMuted)
+            {
+                app.IsMuted = false;
+            }
+        }
+
+        private void OnHardMutedAppsChanged()
+        {
+            foreach (var device in AllDevices)
+            {
+                device.ApplyHardMuteState();
+            }
         }
 
         private void OnHiddenAppsChanged()

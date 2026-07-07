@@ -208,6 +208,12 @@ namespace EarTrumpet.UI.ViewModels
 
             var newSession = new AppItemViewModel(this, session, animateOnLoad: animateOnLoad);
 
+            // Hard-muted apps are forced muted whenever a session appears (launch, relaunch, reboot).
+            if (_settings != null && _settings.IsAppHardMuted(session.ExeName))
+            {
+                session.IsMuted = true;
+            }
+
             foreach (var app in Apps)
             {
                 if (app.DoesGroupWith(newSession))
@@ -275,6 +281,22 @@ namespace EarTrumpet.UI.ViewModels
         {
             ReconcileAppsWithHiddenState();
             RefreshHiddenCount();
+        }
+
+        internal void ApplyHardMuteState()
+        {
+            if (_settings == null)
+            {
+                return;
+            }
+
+            foreach (var app in Apps)
+            {
+                if (!app.IsMuted && _settings.IsAppHardMuted(app.ExeName))
+                {
+                    app.IsMuted = true;
+                }
+            }
         }
 
         public void AppMovingToThisDevice(TemporaryAppItemViewModel app)

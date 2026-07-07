@@ -222,6 +222,15 @@
   <data name="HideAppEntryButtonText" xml:space="preserve">
     <value>Masquer cette entrée d'application</value>
   </data>
+  <data name="HardMuteAppButtonText" xml:space="preserve">
+    <value>Couper le son de cette application</value>
+  </data>
+  <data name="HardMuteAppMenuText" xml:space="preserve">
+    <value>Garder en sourdine (persiste au redémarrage)</value>
+  </data>
+  <data name="HardMuteAppMenuDisableText" xml:space="preserve">
+    <value>Ne plus garder en sourdine</value>
+  </data>
   <data name="SettingsOpenEarTrumpetText" xml:space="preserve">
     <value>Ouvrir le menu déroulant</value>
   </data>

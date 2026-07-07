@@ -36,19 +36,24 @@ namespace EarTrumpet
         public event Action CustomSliderColorsChanged;
         public event Action HiddenAppsChanged;
         public event Action HiddenDevicesChanged;
+        public event Action HardMutedAppsChanged;
 
         private ISettingsBag _settings = StorageFactory.GetSettings();
         private const string HiddenAppEntriesJsonKey = "HiddenAppEntriesJson";
         private const string HiddenDeviceEntriesJsonKey = "HiddenDeviceEntriesJson";
+        private const string HardMutedAppEntriesJsonKey = "HardMutedAppEntriesJson";
         private readonly object _hiddenAppsSync = new object();
         private readonly object _hiddenDevicesSync = new object();
+        private readonly object _hardMutedAppsSync = new object();
         private bool _hiddenAppsLoaded;
         private bool _hiddenDevicesLoaded;
+        private bool _hardMutedAppsLoaded;
         private bool _hotkeyPressHandlerRegistered;
         private DateTime _lastQuickTrumpetHotkeyAt = DateTime.MinValue;
         private string _lastQuickTrumpetHotkey;
         private List<HiddenAppEntry> _hiddenAppEntries = new List<HiddenAppEntry>();
         private List<HiddenDeviceEntry> _hiddenDeviceEntries = new List<HiddenDeviceEntry>();
+        private List<HardMutedAppEntry> _hardMutedAppEntries = new List<HardMutedAppEntry>();
         private List<HotkeyData> _quickTrumpetHotkeys = new List<HotkeyData>();
 
         public class HiddenAppEntry
@@ -65,6 +70,13 @@ namespace EarTrumpet
             public string DeviceId { get; set; }
             public string DisplayName { get; set; }
             public DateTime HiddenAtUtc { get; set; }
+        }
+
+        public class HardMutedAppEntry
+        {
+            public string ExeName { get; set; }
+            public string DisplayName { get; set; }
+            public DateTime HardMutedAtUtc { get; set; }
         }
 
         /// <summary>
@@ -567,6 +579,160 @@ namespace EarTrumpet
             return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToLowerInvariant();
         }
 
+        // Hard Muted Apps Methods
+        // A hard-muted app is forced muted every time one of its audio sessions appears,
+        // including after the app relaunches or the machine reboots. Keyed by ExeName
+        // because AppId and session ids are not stable across restarts.
+        public bool IsAppHardMuted(string exeName)
+        {
+            var normalizedExeName = NormalizeHiddenKeyValue(exeName);
+            if (string.IsNullOrEmpty(normalizedExeName))
+            {
+                return false;
+            }
+
+            lock (_hardMutedAppsSync)
+            {
+                EnsureHardMutedAppsLoaded();
+                return _hardMutedAppEntries.Any(entry => entry.ExeName == normalizedExeName);
+            }
+        }
+
+        public List<HardMutedAppEntry> GetHardMutedApps()
+        {
+            lock (_hardMutedAppsSync)
+            {
+                EnsureHardMutedAppsLoaded();
+                return _hardMutedAppEntries
+                    .OrderBy(entry => entry.DisplayName)
+                    .ThenBy(entry => entry.ExeName)
+                    .Select(entry => new HardMutedAppEntry
+                    {
+                        ExeName = entry.ExeName,
+                        DisplayName = entry.DisplayName,
+                        HardMutedAtUtc = entry.HardMutedAtUtc,
+                    })
+                    .ToList();
+            }
+        }
+
+        public void SetAppHardMuted(string exeName, bool hardMuted, string displayName = null)
+        {
+            var normalizedExeName = NormalizeHiddenKeyValue(exeName);
+            if (string.IsNullOrEmpty(normalizedExeName))
+            {
+                return;
+            }
+
+            var safeDisplayName = string.IsNullOrWhiteSpace(displayName) ? string.Empty : displayName.Trim();
+            bool changed = false;
+
+            lock (_hardMutedAppsSync)
+            {
+                EnsureHardMutedAppsLoaded();
+                var existing = _hardMutedAppEntries.FirstOrDefault(entry => entry.ExeName == normalizedExeName);
+
+                if (hardMuted && existing == null)
+                {
+                    _hardMutedAppEntries.Add(new HardMutedAppEntry
+                    {
+                        ExeName = normalizedExeName,
+                        DisplayName = safeDisplayName,
+                        HardMutedAtUtc = DateTime.UtcNow,
+                    });
+                    SaveHardMutedAppsUnsafe();
+                    changed = true;
+                }
+                else if (!hardMuted && existing != null)
+                {
+                    _hardMutedAppEntries.RemoveAll(entry => entry.ExeName == normalizedExeName);
+                    SaveHardMutedAppsUnsafe();
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                HardMutedAppsChanged?.Invoke();
+            }
+        }
+
+        public void ClearHardMutedApps()
+        {
+            bool changed = false;
+            lock (_hardMutedAppsSync)
+            {
+                EnsureHardMutedAppsLoaded();
+                if (_hardMutedAppEntries.Count > 0)
+                {
+                    _hardMutedAppEntries.Clear();
+                    SaveHardMutedAppsUnsafe();
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                HardMutedAppsChanged?.Invoke();
+            }
+        }
+
+        private void EnsureHardMutedAppsLoaded()
+        {
+            if (_hardMutedAppsLoaded)
+            {
+                return;
+            }
+
+            try
+            {
+                var json = _settings.Get(HardMutedAppEntriesJsonKey, "[]");
+                var loaded = Newtonsoft.Json.JsonConvert.DeserializeObject<List<HardMutedAppEntry>>(json) ?? new List<HardMutedAppEntry>();
+                _hardMutedAppEntries = NormalizeHardMutedEntries(loaded);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"AppSettings EnsureHardMutedAppsLoaded failed: {ex.Message}");
+                _hardMutedAppEntries = new List<HardMutedAppEntry>();
+            }
+
+            _hardMutedAppsLoaded = true;
+        }
+
+        private void SaveHardMutedAppsUnsafe()
+        {
+            _settings.Set(HardMutedAppEntriesJsonKey, Newtonsoft.Json.JsonConvert.SerializeObject(_hardMutedAppEntries));
+        }
+
+        private List<HardMutedAppEntry> NormalizeHardMutedEntries(List<HardMutedAppEntry> entries)
+        {
+            var dedup = new HashSet<string>(StringComparer.Ordinal);
+            var normalizedEntries = new List<HardMutedAppEntry>();
+
+            foreach (var entry in entries)
+            {
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                var normalizedExeName = NormalizeHiddenKeyValue(entry.ExeName);
+                if (string.IsNullOrEmpty(normalizedExeName) || !dedup.Add(normalizedExeName))
+                {
+                    continue;
+                }
+
+                normalizedEntries.Add(new HardMutedAppEntry
+                {
+                    ExeName = normalizedExeName,
+                    DisplayName = string.IsNullOrWhiteSpace(entry.DisplayName) ? string.Empty : entry.DisplayName.Trim(),
+                    HardMutedAtUtc = entry.HardMutedAtUtc,
+                });
+            }
+
+            return normalizedEntries;
+        }
+
         // Hidden Devices Methods
         public int HiddenDevicesCount
         {
@@ -1040,6 +1206,21 @@ namespace EarTrumpet
             {
                 _settings.Set("VolumeProfilesJson", value);
                 RegisterQuickTrumpetHotkeys();
+            }
+        }
+
+        // Hard-muted apps JSON storage (passthrough for settings export/import).
+        public string HardMutedAppsJson
+        {
+            get => _settings.Get(HardMutedAppEntriesJsonKey, "[]");
+            set
+            {
+                _settings.Set(HardMutedAppEntriesJsonKey, string.IsNullOrWhiteSpace(value) ? "[]" : value);
+                lock (_hardMutedAppsSync)
+                {
+                    _hardMutedAppsLoaded = false;
+                }
+                HardMutedAppsChanged?.Invoke();
             }
         }
 

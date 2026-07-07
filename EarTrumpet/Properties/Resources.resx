@@ -228,6 +228,15 @@
   <data name="HideAppEntryButtonText" xml:space="preserve">
     <value>Hide this app entry</value>
   </data>
+  <data name="HardMuteAppButtonText" xml:space="preserve">
+    <value>Hard mute this app</value>
+  </data>
+  <data name="HardMuteAppMenuText" xml:space="preserve">
+    <value>Keep muted (survives restart)</value>
+  </data>
+  <data name="HardMuteAppMenuDisableText" xml:space="preserve">
+    <value>Stop keeping muted</value>
+  </data>
   <data name="SettingsOpenEarTrumpetText" xml:space="preserve">
     <value>Open Taskbar flyout</value>
   </data>
