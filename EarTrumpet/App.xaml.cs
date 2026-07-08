@@ -639,6 +639,7 @@ namespace EarTrumpet
             var ret = new List<ContextMenuItem>(CollectionViewModel.AllDevices.OrderBy(x => x.DisplayName).Select(dev => new ContextMenuItem
             {
                 DisplayName = dev.DisplayName,
+                Glyph = GetTrayDeviceGlyph(dev.DisplayName),
                 IsChecked = dev.Id == CollectionViewModel.Default?.Id,
                 Command = new RelayCommand(() => dev.MakeDefaultDevice()),
             }));
@@ -764,6 +765,7 @@ namespace EarTrumpet
                     new ContextMenuItem
                     {
                         DisplayName = EarTrumpet.Properties.Resources.TrayWindowsAudioTools,
+                        Glyph = "\xE782",
                         Children = new List<ContextMenuItem>
                         {
                             new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.LegacyVolumeMixerText, Command =  new RelayCommand(LegacyControlPanelHelper.StartLegacyAudioMixer) },
@@ -778,9 +780,31 @@ namespace EarTrumpet
                         },
                     },
                     new ContextMenuSeparator(),
-                    new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.ContextMenuExitTitle, Command = new RelayCommand(Shutdown) },
+                    new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.ContextMenuExitTitle, Glyph = "\xE7E8", Command = new RelayCommand(Shutdown) },
                 });
             return ret;
+        }
+
+        private static string GetTrayDeviceGlyph(string displayName)
+        {
+            var lower = displayName?.ToLowerInvariant() ?? string.Empty;
+
+            if (lower.Contains("headset") || lower.Contains("headphone") || lower.Contains("casque"))
+            {
+                return "\xE7F6";
+            }
+
+            if (lower.Contains("speaker") || lower.Contains("haut-parleur"))
+            {
+                return "\xE767";
+            }
+
+            if (lower.Contains("monitor") || lower.Contains("nvidia") || lower.Contains("hdmi") || lower.Contains("display"))
+            {
+                return "\xE7F4";
+            }
+
+            return "\xE995";
         }
 
         private async void CheckForUpdatesFromTray()
