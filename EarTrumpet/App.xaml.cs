@@ -639,7 +639,7 @@ namespace EarTrumpet
             var ret = new List<ContextMenuItem>(CollectionViewModel.AllDevices.OrderBy(x => x.DisplayName).Select(dev => new ContextMenuItem
             {
                 DisplayName = dev.DisplayName,
-                Glyph = GetTrayDeviceGlyph(dev.DisplayName),
+                Glyph = "\xE921",
                 IsChecked = dev.Id == CollectionViewModel.Default?.Id,
                 Command = new RelayCommand(() => dev.MakeDefaultDevice()),
             }));
@@ -739,8 +739,8 @@ namespace EarTrumpet
             ret.AddRange(new List<ContextMenuItem>
                 {
                     new ContextMenuSeparator(),
-                    new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.TrayOpenVolumeMixer, Glyph = "\xE9E9", Command = new RelayCommand(_mixerWindow.OpenOrBringToFront) },
-                    new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.TrayOpenSettings, Glyph = "\xE713", Command = new RelayCommand(_settingsWindow.OpenOrBringToFront) },
+                    new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.TrayOpenVolumeMixer, Glyph = "\xE9E9", IconData = PhosphorIconData.SlidersHorizontal, IconScale = 1.02, Command = new RelayCommand(_mixerWindow.OpenOrBringToFront) },
+                    new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.TrayOpenSettings, Glyph = "\xE713", IconData = PhosphorIconData.GearSix, IconScale = 0.96, Command = new RelayCommand(_settingsWindow.OpenOrBringToFront) },
                 });
 
             if (_updateService != null && _updateService.IsUpdateAvailable)
@@ -750,6 +750,8 @@ namespace EarTrumpet
                 {
                     DisplayName = string.Format(EarTrumpet.Properties.Resources.UpdateContextMenu, _updateService.LatestVersion),
                     Glyph = "\xE896",
+                    IconData = PhosphorIconData.DownloadSimple,
+                    IconScale = 0.96,
                     Command = new RelayCommand(() => _updateService.DownloadAndInstallAsync()),
                 });
             }
@@ -757,10 +759,10 @@ namespace EarTrumpet
             ret.AddRange(new List<ContextMenuItem>
                 {
                     new ContextMenuSeparator(),
-                    new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.CheckForUpdatesText, Glyph = "\xE895", Command = new RelayCommand(CheckForUpdatesFromTray) },
-                    new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.TrayWhatsNew, Glyph = "\xE8F1", Command = new RelayCommand(ShowChangelogManually) },
-                    new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.TrayShowOnboarding, Glyph = "\xE7BE", Command = new RelayCommand(ShowOnboardingManually) },
-                    new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.TrayStarProject, Glyph = "\xE734", Command = new RelayCommand(OpenGitHubRepo) },
+                    new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.CheckForUpdatesText, Glyph = "\xE895", IconData = PhosphorIconData.ArrowsClockwise, IconScale = 0.98, Command = new RelayCommand(CheckForUpdatesFromTray) },
+                    new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.TrayWhatsNew, Glyph = "\xE8F1", IconData = PhosphorIconData.ListBullets, IconScale = 0.93, Command = new RelayCommand(ShowChangelogManually) },
+                    new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.TrayShowOnboarding, Glyph = "\xE7BE", IconData = PhosphorIconData.Sparkle, IconScale = 0.92, Command = new RelayCommand(ShowOnboardingManually) },
+                    new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.TrayStarProject, Glyph = "\xE734", IconData = PhosphorIconData.GitHubLogo, IconScale = 0.96, Command = new RelayCommand(OpenGitHubRepo) },
                     new ContextMenuSeparator(),
                     new ContextMenuItem
                     {
@@ -780,31 +782,9 @@ namespace EarTrumpet
                         },
                     },
                     new ContextMenuSeparator(),
-                    new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.ContextMenuExitTitle, Glyph = "\xE7E8", Command = new RelayCommand(Shutdown) },
+                    new ContextMenuItem { DisplayName = EarTrumpet.Properties.Resources.ContextMenuExitTitle, Glyph = "\xE7E8", IconData = PhosphorIconData.Power, IconScale = 0.95, Command = new RelayCommand(Shutdown) },
                 });
             return ret;
-        }
-
-        private static string GetTrayDeviceGlyph(string displayName)
-        {
-            var lower = displayName?.ToLowerInvariant() ?? string.Empty;
-
-            if (lower.Contains("headset") || lower.Contains("headphone") || lower.Contains("casque"))
-            {
-                return "\xE7F6";
-            }
-
-            if (lower.Contains("speaker") || lower.Contains("haut-parleur"))
-            {
-                return "\xE767";
-            }
-
-            if (lower.Contains("monitor") || lower.Contains("nvidia") || lower.Contains("hdmi") || lower.Contains("display"))
-            {
-                return "\xE7F4";
-            }
-
-            return "\xE995";
         }
 
         private async void CheckForUpdatesFromTray()

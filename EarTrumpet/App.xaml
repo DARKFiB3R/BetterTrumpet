@@ -809,6 +809,27 @@
                                                        SnapsToDevicePixels="False"
                                                        Text="{TemplateBinding Tag}"
                                                        Visibility="Hidden" />
+                                            <Viewbox x:Name="VectorIcon"
+                                                     Width="16"
+                                                     Height="16"
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Center"
+                                                     Opacity="0.76"
+                                                     RenderTransformOrigin="0.5,0.5"
+                                                     Visibility="Collapsed">
+                                                <Viewbox.RenderTransform>
+                                                    <TranslateTransform X="-1.5" Y="1" />
+                                                </Viewbox.RenderTransform>
+                                                <Path Data="{Binding IconData}"
+                                                      Fill="{Binding RelativeSource={RelativeSource AncestorType={x:Type MenuItem}}, Path=Foreground}"
+                                                      RenderTransformOrigin="0.5,0.5"
+                                                      SnapsToDevicePixels="False"
+                                                      Stretch="Uniform">
+                                                    <Path.RenderTransform>
+                                                        <ScaleTransform ScaleX="{Binding IconScale}" ScaleY="{Binding IconScale}" />
+                                                    </Path.RenderTransform>
+                                                </Path>
+                                            </Viewbox>
                                             <TextBlock x:Name="SubmenuArrow"
                                                        Theme:Brush.Foreground="Theme={Theme}BaseMedium, HighContrast=ControlText"
                                                        FontFamily="Segoe MDL2 Assets"
@@ -828,6 +849,7 @@
                                                       RecognizesAccessKey="False" />
 
                                     <Popup x:Name="Popup"
+                                           b:PopupEx.EnableAcrylic="True"
                                            MinWidth="200"
                                            AllowsTransparency="True"
                                            Focusable="False"
@@ -837,8 +859,8 @@
                                            PopupAnimation="None">
 
                                         <Border x:Name="SubmenuBorder"
-                                                Theme:Brush.Background="Theme={Theme}ChromeMediumLow, HighContrast=Menu"
-                                                Theme:Brush.BorderBrush="Theme={Theme}ChromeHigh, HighContrast=ControlText"
+                                                Theme:Brush.Background="Theme=#18181A/0.36/0.86, HighContrast=Menu"
+                                                Theme:Brush.BorderBrush="Theme=White/0.28/0.28, HighContrast=ControlText"
                                                 BorderThickness="1"
                                                 CornerRadius="8"
                                                 RenderTransformOrigin="0,0"
@@ -852,8 +874,8 @@
                                                 <ScaleTransform x:Name="SubmenuScale" ScaleX="1" ScaleY="1" />
                                             </Border.RenderTransform>
                                             <Border Padding="4,4"
-                                                    Background="{TemplateBinding Background}"
-                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    Background="Transparent"
+                                                    BorderBrush="Transparent"
                                                     BorderThickness="0"
                                                     CornerRadius="8">
                                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -866,14 +888,19 @@
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="ButtonBase.Command" Value="{x:Null}" />
+                                <DataTrigger Binding="{Binding HasIcon}" Value="True">
+                                    <Setter TargetName="VectorIcon" Property="Visibility" Value="Visible" />
+                                </DataTrigger>
                                 <Trigger Property="IsChecked" Value="True">
                                     <Setter TargetName="CheckMark" Property="Visibility" Value="Visible" />
+                                    <Setter TargetName="VectorIcon" Property="Visibility" Value="Collapsed" />
                                 </Trigger>
                                 <Trigger Property="IsHighlighted" Value="True">
                                     <Setter Property="Theme:Brush.Foreground" Value="Theme={Theme}BaseHigh, HighContrast=HighlightText" />
                                     <Setter TargetName="Border" Property="Theme:Brush.Background" Value="Theme={Theme}ListLow, HighContrast=Highlight" />
                                     <Setter TargetName="CheckMark" Property="Theme:Brush.Foreground" Value="Theme={Theme}BaseMedium, HighContrast=HighlightText" />
                                     <Setter TargetName="SubmenuArrow" Property="Theme:Brush.Foreground" Value="Theme={Theme}BaseMedium, HighContrast=HighlightText" />
+                                    <Setter TargetName="VectorIcon" Property="Opacity" Value="1" />
                                     <Trigger.EnterActions>
                                         <BeginStoryboard>
                                             <Storyboard>

@@ -54,10 +54,11 @@ namespace EarTrumpet.Interop.Helpers
         {
             Visual targetVisual = visual;
 
-            // We don't want the parent window showing a popup
-            if (visual is Popup popup && popup.Child != null)
+            // Popup owns a separate HWND through its child visual. Applying acrylic to the
+            // Popup object itself can resolve to no source, which makes the call a no-op.
+            if (visual is Popup popup && popup.Child is Visual popupChild)
             {
-                targetVisual = popup;
+                targetVisual = popupChild;
             }
 
             return PresentationSource.FromVisual(targetVisual) is HwndSource source ? source.Handle : IntPtr.Zero;

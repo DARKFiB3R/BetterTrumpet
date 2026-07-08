@@ -11,6 +11,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace EarTrumpet.UI.Helpers
@@ -335,7 +336,10 @@ namespace EarTrumpet.UI.Helpers
                 Trace.WriteLine("ShellNotifyIcon ShowContextMenu");
                 var contextMenu = new ContextMenu
                 {
+                    Background = new SolidColorBrush(Color.FromArgb(142, 24, 24, 26)),
+                    BorderBrush = new SolidColorBrush(Color.FromArgb(88, 255, 255, 255)),
                     FlowDirection = SystemSettings.IsRTL ? FlowDirection.RightToLeft : FlowDirection.LeftToRight,
+                    HasDropShadow = false,
                     StaysOpen = true,
                     ItemsSource = itemsSource
                 };
@@ -350,6 +354,8 @@ namespace EarTrumpet.UI.Helpers
                 }
 
                 Themes.Options.SetSource(contextMenu, Themes.Options.SourceKind.System);
+                Themes.Brush.SetBackground(contextMenu, "Theme=#18181A/0.36/0.86, HighContrast=Menu");
+                Themes.Brush.SetBorderBrush(contextMenu, "Theme=White/0.28/0.28, HighContrast=ControlText");
                 contextMenu.PreviewKeyDown += (_, e) =>
                 {
                     if (e.Key == Key.Escape)
@@ -365,7 +371,9 @@ namespace EarTrumpet.UI.Helpers
                     contextMenu.Focus();
                     contextMenu.StaysOpen = false;
                 // Disable only the exit animation.
-                ((Popup)contextMenu.Parent).PopupAnimation = PopupAnimation.None;
+                var popup = (Popup)contextMenu.Parent;
+                popup.PopupAnimation = PopupAnimation.None;
+                ApplyTrayContextMenuAcrylic(popup, contextMenu);
                 };
                 contextMenu.Closed += (_, __) =>
                 {
@@ -374,6 +382,19 @@ namespace EarTrumpet.UI.Helpers
                 };
                 contextMenu.IsOpen = true;
             }
+        }
+
+        private static void ApplyTrayContextMenuAcrylic(Popup popup, DependencyObject themeTarget)
+        {
+            if (!SystemSettings.IsTransparencyEnabled || SystemParameters.HighContrast)
+            {
+                return;
+            }
+
+            AccentPolicyLibrary.EnableAcrylic(
+                popup,
+                Themes.Manager.Current.ResolveRef(themeTarget, "AcrylicColor_Flyout"),
+                User32.AccentFlags.None);
         }
     }
 }
