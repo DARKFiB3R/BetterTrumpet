@@ -2748,20 +2748,11 @@ namespace EarTrumpet.Properties {
         public static string ChangelogSubtitle {
             get { return ResourceManager.GetString("ChangelogSubtitle", resourceCulture); }
         }
-        public static string ChangelogThanks {
-            get { return ResourceManager.GetString("ChangelogThanks", resourceCulture); }
+        public static string ChangelogViewReleaseNotes {
+            get { return ResourceManager.GetString("ChangelogViewReleaseNotes", resourceCulture); }
         }
         public static string ChangelogContinue {
             get { return ResourceManager.GetString("ChangelogContinue", resourceCulture); }
-        }
-        public static string ChangelogLoading {
-            get { return ResourceManager.GetString("ChangelogLoading", resourceCulture); }
-        }
-        public static string ChangelogNoNotes {
-            get { return ResourceManager.GetString("ChangelogNoNotes", resourceCulture); }
-        }
-        public static string ChangelogLoadError {
-            get { return ResourceManager.GetString("ChangelogLoadError", resourceCulture); }
         }
         public static string PresetCategoryAll {
             get { return ResourceManager.GetString("PresetCategoryAll", resourceCulture); }

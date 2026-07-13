@@ -1537,25 +1537,16 @@ Details: {0}</value>
     <value>Update (v{0})</value>
   </data>
   <data name="ChangelogTitle" xml:space="preserve">
-    <value>What's New</value>
+    <value>BetterTrumpet is up to date</value>
   </data>
   <data name="ChangelogSubtitle" xml:space="preserve">
-    <value>Everything that changed in this version.</value>
+    <value>Version {0} is now installed.</value>
   </data>
-  <data name="ChangelogThanks" xml:space="preserve">
-    <value>Thanks for using BetterTrumpet.</value>
+  <data name="ChangelogViewReleaseNotes" xml:space="preserve">
+    <value>See what's new</value>
   </data>
   <data name="ChangelogContinue" xml:space="preserve">
-    <value>Let's go</value>
-  </data>
-  <data name="ChangelogLoading" xml:space="preserve">
-    <value>Loading...</value>
-  </data>
-  <data name="ChangelogNoNotes" xml:space="preserve">
-    <value>No release notes available.</value>
-  </data>
-  <data name="ChangelogLoadError" xml:space="preserve">
-    <value>Unable to load release notes.\nCheck your internet connection.</value>
+    <value>OK</value>
   </data>
   <data name="PresetCategoryAll" xml:space="preserve">
     <value>All</value>

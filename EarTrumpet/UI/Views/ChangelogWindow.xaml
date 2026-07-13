@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:resx="clr-namespace:EarTrumpet.Properties"
         Title="{x:Static resx:Resources.ChangelogTitle}"
-        Width="600" Height="650"
+        Width="480" Height="250"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         WindowStyle="None"
@@ -19,65 +19,66 @@
         </ResourceDictionary>
     </Window.Resources>
 
-    <Border x:Name="MainBorder" Background="#1A1A1A" CornerRadius="8" BorderBrush="#2E2E2E" BorderThickness="1">
+    <Border Background="{StaticResource OnboardingBg}"
+            CornerRadius="8"
+            BorderBrush="{StaticResource OnboardingBorder}"
+            BorderThickness="1">
         <Border.Effect>
             <DropShadowEffect BlurRadius="20" ShadowDepth="0" Opacity="0.5" Color="Black"/>
         </Border.Effect>
 
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Subtle animated gradient overlay -->
-            <Border Grid.RowSpan="3" CornerRadius="8" IsHitTestVisible="False" Opacity="0.15">
-                <Border.Background>
-                    <RadialGradientBrush x:Name="PulseGradient" GradientOrigin="0.5,0.3" Center="0.5,0.3" RadiusX="0.8" RadiusY="0.8">
-                        <GradientStop Color="#0078D4" Offset="0"/>
-                        <GradientStop Color="Transparent" Offset="1"/>
-                    </RadialGradientBrush>
-                </Border.Background>
-            </Border>
+            <Grid Margin="32,32,32,20" MouseLeftButtonDown="Header_MouseLeftButtonDown">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="44"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-            <!-- Header -->
-            <StackPanel Grid.Row="0" Margin="40,40,40,20">
-                <TextBlock x:Name="VersionBadge"
-                           FontSize="12"
-                           Foreground="#0078D4"
-                           FontWeight="SemiBold"
-                           Margin="0,0,0,12"/>
+                <Grid Width="36" Height="36" VerticalAlignment="Top">
+                    <Ellipse Fill="#223B9EFF"/>
+                    <Path Data="M 10,18 L 15.5,23.5 L 26,13"
+                          Stroke="{StaticResource OnboardingAccent}"
+                          StrokeThickness="2.2"
+                          StrokeStartLineCap="Round"
+                          StrokeEndLineCap="Round"
+                          StrokeLineJoin="Round"/>
+                </Grid>
 
-                <TextBlock Text="{x:Static resx:Resources.ChangelogTitle}"
-                           FontSize="24"
-                           FontWeight="Bold"
-                           Foreground="White"
-                           Margin="0,0,0,8"/>
+                <StackPanel Grid.Column="1" Margin="12,1,0,0">
+                    <TextBlock Text="{x:Static resx:Resources.ChangelogTitle}"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource OnboardingText}"
+                               Margin="0,0,0,8"/>
 
-                <TextBlock Text="{x:Static resx:Resources.ChangelogSubtitle}"
-                           FontSize="14"
-                           Foreground="#B0B0B0"/>
-            </StackPanel>
+                    <TextBlock x:Name="VersionMessage"
+                               FontSize="14"
+                               Foreground="{StaticResource OnboardingTextMuted}"
+                               TextWrapping="Wrap"
+                               LineHeight="21"/>
+                </StackPanel>
+            </Grid>
 
-            <!-- Content -->
-            <ScrollViewer Grid.Row="1" Margin="40,0" VerticalScrollBarVisibility="Auto">
-                <ScrollViewer.Resources>
-                    <Style TargetType="ScrollBar">
-                        <Setter Property="Background" Value="#10FFFFFF"/>
-                        <Setter Property="Width" Value="8"/>
-                    </Style>
-                </ScrollViewer.Resources>
-                <StackPanel x:Name="ContentPanel"/>
-            </ScrollViewer>
+            <StackPanel Grid.Row="1"
+                        Margin="24,0,24,24"
+                        HorizontalAlignment="Right"
+                        Orientation="Horizontal">
+                <Button Content="{x:Static resx:Resources.ChangelogViewReleaseNotes}"
+                        Style="{StaticResource OnboardingGhostButton}"
+                        Margin="0,0,8,0"
+                        Click="ViewReleaseNotes_Click"/>
 
-            <!-- Footer -->
-            <Grid Grid.Row="2" Margin="40,20,40,40">
                 <Button Content="{x:Static resx:Resources.ChangelogContinue}"
                         Style="{StaticResource OnboardingPrimaryButton}"
-                        HorizontalAlignment="Right"
+                        MinWidth="88"
+                        IsDefault="True"
                         Click="Continue_Click"/>
-            </Grid>
+            </StackPanel>
         </Grid>
     </Border>
 </Window>
