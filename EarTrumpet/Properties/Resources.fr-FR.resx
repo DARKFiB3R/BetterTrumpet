@@ -956,6 +956,9 @@ Voulez-vous ouvrir [https://eartrumpet.app/jmp/fixfonts] maintenant?</value>
   <data name="SettingsOnlyWhenPlaying" xml:space="preserve">
     <value>Afficher uniquement quand un média joue</value>
   </data>
+  <data name="SettingsShowWhenPaused" xml:space="preserve">
+    <value>Afficher les contrôles quand le média est en pause</value>
+  </data>
   <data name="SettingsRememberExpanded" xml:space="preserve">
     <value>Mémoriser l'état étendu/réduit</value>
   </data>

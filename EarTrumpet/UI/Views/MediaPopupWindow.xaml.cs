@@ -1,4 +1,8 @@
 using EarTrumpet.DataModel;
+using EarTrumpet.Extensions;
+using EarTrumpet.Interop;
+using EarTrumpet.Interop.Helpers;
+using EarTrumpet.UI.Helpers;
 using System;
 using System.Diagnostics;
 using System.Threading;
@@ -34,16 +38,40 @@ namespace EarTrumpet.UI.Views
         private CancellationTokenSource _thumbnailCts;
         private CancellationTokenSource _trackChangeCts;
         private CancellationTokenSource _albumArtCts;
+        private CancellationTokenSource _seekCts;
         private Action _pendingAction;
+        private readonly SolidColorBrush _accentBrush = new SolidColorBrush(Color.FromRgb(107, 77, 230));
+        private readonly SolidColorBrush _inactiveIconBrush = new SolidColorBrush(Color.FromArgb(144, 255, 255, 255));
+        private readonly Storyboard _slideInStoryboard;
+        private readonly Storyboard _slideOutStoryboard;
+        private readonly Storyboard _trackChangeOutStoryboard;
+        private readonly Storyboard _trackChangeInStoryboard;
+        private bool _isDraggingProgress;
+        private bool _updatingProgressSlider;
+        private TimeSpan _currentDuration;
+        private TimeSpan _progressAnchorPosition;
+        private DateTime _progressAnchorTimestamp;
+        private bool _hasProgressAnchor;
+        private TimeSpan? _pendingSeekPosition;
+        private DateTime _pendingSeekExpiresAt;
 
         private const double CollapsedHeight = 185;
         private const double ExpandedHeight = 405;
         private const double ContainerWidth = 268;
+        private const byte MinimumPopupTintAlpha = 0xA8;
 
         public MediaPopupWindow(AppSettings settings)
         {
             _settings = settings;
             InitializeComponent();
+
+            _slideInStoryboard = (Storyboard)FindResource("SlideIn");
+            _slideOutStoryboard = (Storyboard)FindResource("SlideOut");
+            _trackChangeOutStoryboard = (Storyboard)FindResource("TrackChangeOut");
+            _trackChangeInStoryboard = (Storyboard)FindResource("TrackChangeIn");
+            _slideInStoryboard.Completed += OnSlideInCompleted;
+            _trackChangeOutStoryboard.Completed += OnTrackChangeOutCompleted;
+            ProgressSlider.Foreground = _accentBrush;
 
             // Load expanded state from settings
             if (_settings.MediaPopupRememberExpanded)
@@ -59,8 +87,11 @@ namespace EarTrumpet.UI.Views
             _marqueeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
             _marqueeTimer.Tick += MarqueeTimer_Tick;
 
-            // Timer for progress bar updates (1 second)
-            _progressTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            // Render locally between the less frequent timeline updates supplied by SMTC.
+            _progressTimer = new DispatcherTimer(DispatcherPriority.Render)
+            {
+                Interval = TimeSpan.FromMilliseconds(100)
+            };
             _progressTimer.Tick += ProgressTimer_Tick;
 
             // Reusable timer for delayed actions
@@ -76,8 +107,8 @@ namespace EarTrumpet.UI.Views
             MediaSessionService.Instance.MediaTrackChanged += OnMediaTrackChanged;
             MediaSessionService.Instance.TimelineChanged += OnTimelineChanged;
 
-            // Subscribe to settings changes
-            _settings.MediaPopupSettingsChanged += OnSettingsChanged;
+            SourceInitialized += OnSourceInitialized;
+            Themes.Manager.Current.ThemeChanged += OnThemeChanged;
 
             // Cleanup on close
             Closed += OnWindowClosed;
@@ -92,7 +123,7 @@ namespace EarTrumpet.UI.Views
             MediaSessionService.Instance.MediaPlaybackChanged -= OnMediaPlaybackChanged;
             MediaSessionService.Instance.MediaTrackChanged -= OnMediaTrackChanged;
             MediaSessionService.Instance.TimelineChanged -= OnTimelineChanged;
-            _settings.MediaPopupSettingsChanged -= OnSettingsChanged;
+            Themes.Manager.Current.ThemeChanged -= OnThemeChanged;
 
             // Stop all timers
             _hideTimer.Stop();
@@ -107,14 +138,41 @@ namespace EarTrumpet.UI.Views
             _trackChangeCts?.Dispose();
             _albumArtCts?.Cancel();
             _albumArtCts?.Dispose();
+            _seekCts?.Cancel();
+            _seekCts?.Dispose();
+            _slideInStoryboard.Completed -= OnSlideInCompleted;
+            _trackChangeOutStoryboard.Completed -= OnTrackChangeOutCompleted;
+            AccentPolicyLibrary.DisableAcrylic(this);
         }
 
-        private void OnSettingsChanged()
+        private void OnSourceInitialized(object sender, EventArgs e)
         {
-            Dispatcher.BeginInvoke((Action)(() =>
+            this.EnableRoundedCornersIfApplicable();
+            ApplyFlyoutAcrylic();
+        }
+
+        private void OnThemeChanged()
+        {
+            if (_isShowing)
             {
-                AlbumArtBlur.Radius = _settings.MediaPopupBlurRadius;
-            }));
+                Dispatcher.BeginInvoke((Action)ApplyFlyoutAcrylic);
+            }
+        }
+
+        private void ApplyFlyoutAcrylic()
+        {
+            if (PresentationSource.FromVisual(this) == null) return;
+
+            Color tint = Themes.Manager.Current.ResolveRef(this, "AcrylicColor_Flyout");
+            if (tint.A < MinimumPopupTintAlpha)
+            {
+                tint = Color.FromArgb(MinimumPopupTintAlpha, tint.R, tint.G, tint.B);
+            }
+
+            AccentPolicyLibrary.EnableAcrylic(
+                this,
+                tint,
+                User32.AccentFlags.DrawAllBorders);
         }
 
         private void DelayedActionTimer_Tick(object sender, EventArgs e)
@@ -134,6 +192,7 @@ namespace EarTrumpet.UI.Views
         private void PreloadThumbnail()
         {
             _thumbnailCts?.Cancel();
+            _thumbnailCts?.Dispose();
             _thumbnailCts = new CancellationTokenSource();
             var token = _thumbnailCts.Token;
 
@@ -160,17 +219,20 @@ namespace EarTrumpet.UI.Views
 
         private void OnMediaTrackChanged()
         {
-            PreloadThumbnail();
-
             Dispatcher.BeginInvoke((Action)(() =>
             {
+                _seekCts?.Cancel();
+                _pendingSeekPosition = null;
+                _hasProgressAnchor = false;
+
                 if (_isShowing)
                 {
                     PlayTrackChangeAnimation();
                 }
                 else
                 {
-                    UpdateAllContent();
+                    _cachedTitle = null;
+                    PreloadThumbnail();
                 }
             }));
         }
@@ -188,72 +250,103 @@ namespace EarTrumpet.UI.Views
 
         private void PlayTrackChangeAnimation()
         {
-            var outStoryboard = (Storyboard)FindResource("TrackChangeOut");
-            outStoryboard.Completed -= OnTrackChangeOutCompleted; // Prevent duplicate handlers
-            outStoryboard.Completed += OnTrackChangeOutCompleted;
-            outStoryboard.Begin(this, true);
+            _trackChangeCts?.Cancel();
+            _trackChangeCts?.Dispose();
+            _trackChangeCts = new CancellationTokenSource();
+
+            _trackChangeInStoryboard.Stop(this);
+            _trackChangeOutStoryboard.Begin(this, true);
         }
 
         private void OnTrackChangeOutCompleted(object sender, EventArgs e)
         {
+            CancellationToken token = _trackChangeCts?.Token ?? CancellationToken.None;
+            UpdatePlayPauseIcon();
+            UpdateProgress();
+            UpdateShuffleRepeatState();
+            UpdateVolumeState();
+
+            Task.Run(() => RefreshTrackContent(token), token);
+        }
+
+        private void RefreshTrackContent(CancellationToken token)
+        {
             try
             {
-                var outStoryboard = (Storyboard)FindResource("TrackChangeOut");
-                outStoryboard.Completed -= OnTrackChangeOutCompleted;
+                string title = MediaSessionService.Instance.GetCurrentMediaInfo();
+                if (token.IsCancellationRequested) return;
 
-                UpdateTitle();
-                UpdatePlayPauseIcon();
-                UpdateProgress();
-                UpdateShuffleRepeatState();
-                StartMarqueeIfNeeded();
-
-                // Update album art on background thread
-                _trackChangeCts?.Cancel();
-                _trackChangeCts?.Dispose();
-                _trackChangeCts = new CancellationTokenSource();
-                var token = _trackChangeCts.Token;
-                Task.Run(() =>
+                Dispatcher.BeginInvoke((Action)(() =>
                 {
-                    try
-                    {
-                        var thumbnail = MediaSessionService.Instance.GetCurrentThumbnail();
-                        if (token.IsCancellationRequested) return;
+                    if (token.IsCancellationRequested) return;
+                    ApplyTitle(title);
+                    _trackChangeInStoryboard.Begin(this, true);
+                }));
 
-                        Dispatcher.BeginInvoke((Action)(() =>
-                        {
-                            try
-                            {
-                                if (thumbnail != null)
-                                {
-                                    _cachedThumbnail = thumbnail;
-                                    ApplyThumbnail(thumbnail);
+                BitmapImage thumbnail = MediaSessionService.Instance.GetCurrentThumbnail();
+                if (token.IsCancellationRequested || thumbnail == null) return;
 
-                                    var color = GetDominantColor(thumbnail);
-                                    _cachedDominantColor = color;
-                                    UpdateColors(color);
-                                }
+                Color color = GetDominantColor(thumbnail);
+                if (token.IsCancellationRequested) return;
 
-                                var inStoryboard = (Storyboard)FindResource("TrackChangeIn");
-                                inStoryboard.Begin(this, true);
-                            }
-                            catch (Exception ex) { Trace.WriteLine($"MediaPopupWindow: TrackChange UI update failed - {ex.Message}"); }
-                        }));
-                    }
-                    catch (Exception ex) { Trace.WriteLine($"MediaPopupWindow: TrackChange thumbnail load failed - {ex.Message}"); }
-                }, token);
+                Dispatcher.BeginInvoke((Action)(() =>
+                {
+                    if (token.IsCancellationRequested) return;
+                    _cachedThumbnail = thumbnail;
+                    _cachedDominantColor = color;
+                    ApplyTrackThumbnail(thumbnail);
+                    UpdateColors(color);
+                }));
             }
-            catch (Exception ex) { Trace.WriteLine($"MediaPopupWindow: OnTrackChangeOutCompleted failed - {ex.Message}"); }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"MediaPopupWindow: Track content refresh failed - {ex.Message}");
+                Dispatcher.BeginInvoke((Action)(() =>
+                {
+                    if (!token.IsCancellationRequested)
+                    {
+                        _trackChangeInStoryboard.Begin(this, true);
+                    }
+                }));
+            }
         }
 
         private void UpdateColors(Color color)
         {
-            GlowColor.Color = color;
-            FlashColor.Color = Color.FromArgb(200, color.R, color.G, color.B);
-            ProgressGradient1.Color = color;
-            ProgressGradient2.Color = Color.FromArgb(255,
+            _cachedDominantColor = color;
+
+            var lighterColor = Color.FromArgb(255,
                 (byte)Math.Min(255, color.R + 50),
                 (byte)Math.Min(255, color.G + 50),
                 (byte)Math.Min(255, color.B + 50));
+            var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+            var duration = TimeSpan.FromMilliseconds(320);
+
+            AnimateBrushColor(_accentBrush, color, duration, easing);
+            AnimateGradientColor(VolGradient1, color, duration, easing);
+            AnimateGradientColor(VolGradient2, lighterColor, duration, easing);
+        }
+
+        private static void AnimateBrushColor(SolidColorBrush brush, Color target, TimeSpan duration, IEasingFunction easing)
+        {
+            var current = brush.Color;
+            brush.BeginAnimation(SolidColorBrush.ColorProperty, null);
+            brush.Color = target;
+            brush.BeginAnimation(SolidColorBrush.ColorProperty, new ColorAnimation(current, target, duration)
+            {
+                EasingFunction = easing
+            });
+        }
+
+        private static void AnimateGradientColor(GradientStop stop, Color target, TimeSpan duration, IEasingFunction easing)
+        {
+            var current = stop.Color;
+            stop.BeginAnimation(GradientStop.ColorProperty, null);
+            stop.Color = target;
+            stop.BeginAnimation(GradientStop.ColorProperty, new ColorAnimation(current, target, duration)
+            {
+                EasingFunction = easing
+            });
         }
 
         private void UpdateAlbumArt()
@@ -290,7 +383,6 @@ namespace EarTrumpet.UI.Views
                             }
                             else if (_cachedThumbnail == null)
                             {
-                                AlbumArtBackground.Source = null;
                                 ExpandedCoverImage.Source = null;
                                 ExpandedCoverBlur.Source = null;
                                 UpdateColors(Color.FromRgb(107, 77, 230));
@@ -305,8 +397,6 @@ namespace EarTrumpet.UI.Views
 
         private void ApplyThumbnail(BitmapImage thumbnail)
         {
-            AlbumArtBackground.Source = thumbnail;
-
             bool isLowRes = Math.Max(thumbnail.PixelWidth, thumbnail.PixelHeight) < 300;
             if (isLowRes)
             {
@@ -381,6 +471,7 @@ namespace EarTrumpet.UI.Views
             {
                 UpdatePlayPauseIcon();
                 UpdateTitle();
+                UpdateProgress();
                 StartMarqueeIfNeeded();
 
                 if (isPlaying && _isShowing)
@@ -407,7 +498,7 @@ namespace EarTrumpet.UI.Views
 
         private void ProgressTimer_Tick(object sender, EventArgs e)
         {
-            UpdateProgress();
+            RenderInterpolatedProgress();
         }
 
         private void UpdateProgress()
@@ -417,24 +508,47 @@ namespace EarTrumpet.UI.Views
                 TimeSpan position, duration;
                 MediaSessionService.Instance.GetTimelineInfo(out position, out duration);
 
-                PositionText.Text = FormatTime(position);
+                _currentDuration = duration;
                 DurationText.Text = FormatTime(duration);
+                _updatingProgressSlider = true;
+                ProgressSlider.Maximum = Math.Max(1, duration.TotalSeconds);
+                _updatingProgressSlider = false;
 
-                if (duration.TotalSeconds > 0)
+                if (_isDraggingProgress) return;
+
+                var now = DateTime.UtcNow;
+                if (_pendingSeekPosition.HasValue)
                 {
-                    var progress = position.TotalSeconds / duration.TotalSeconds;
-                    var containerWidth = ProgressBarContainer.ActualWidth;
-                    if (containerWidth > 0)
+                    TimeSpan expected = _progressAnchorPosition;
+                    if (MediaSessionService.Instance.IsMediaPlaying)
                     {
-                        ProgressBarFill.Width = containerWidth * Math.Min(1, Math.Max(0, progress));
+                        expected += now - _progressAnchorTimestamp;
+                    }
+
+                    if (Math.Abs((position - expected).TotalSeconds) <= 2)
+                    {
+                        _pendingSeekPosition = null;
+                    }
+                    else if (now < _pendingSeekExpiresAt)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        _pendingSeekPosition = null;
                     }
                 }
-                else
-                {
-                    ProgressBarFill.Width = 0;
-                }
+
+                _progressAnchorPosition = position;
+                _progressAnchorTimestamp = now;
+                _hasProgressAnchor = true;
+                RenderProgress(position);
             }
-            catch (Exception ex) { Trace.WriteLine($"MediaPopupWindow: UpdateProgress failed - {ex.Message}"); }
+            catch (Exception ex)
+            {
+                _updatingProgressSlider = false;
+                Trace.WriteLine($"MediaPopupWindow: UpdateProgress failed - {ex.Message}");
+            }
         }
 
         private string FormatTime(TimeSpan time)
@@ -457,23 +571,23 @@ namespace EarTrumpet.UI.Views
 
                 // Shuffle state
                 ShuffleButton.Visibility = shuffleSupported ? Visibility.Visible : Visibility.Collapsed;
-                ShuffleIcon.Foreground = new SolidColorBrush(isShuffleEnabled == true ? _cachedDominantColor : Color.FromArgb(128, 255, 255, 255));
+                ShuffleIcon.Fill = isShuffleEnabled == true ? _accentBrush : _inactiveIconBrush;
 
                 // Repeat state
                 RepeatButton.Visibility = repeatSupported ? Visibility.Visible : Visibility.Collapsed;
                 switch (repeatMode)
                 {
                     case 0: // None
-                        RepeatIcon.Text = "\uE8EE";
-                        RepeatIcon.Foreground = new SolidColorBrush(Color.FromArgb(128, 255, 255, 255));
+                        RepeatIcon.Data = PhosphorIconData.Repeat;
+                        RepeatIcon.Fill = _inactiveIconBrush;
                         break;
                     case 1: // List
-                        RepeatIcon.Text = "\uE8EE";
-                        RepeatIcon.Foreground = new SolidColorBrush(_cachedDominantColor);
+                        RepeatIcon.Data = PhosphorIconData.Repeat;
+                        RepeatIcon.Fill = _accentBrush;
                         break;
                     case 2: // Track
-                        RepeatIcon.Text = "\uE8ED";
-                        RepeatIcon.Foreground = new SolidColorBrush(_cachedDominantColor);
+                        RepeatIcon.Data = PhosphorIconData.RepeatOnce;
+                        RepeatIcon.Fill = _accentBrush;
                         break;
                 }
             }
@@ -484,11 +598,8 @@ namespace EarTrumpet.UI.Views
         {
             if (_isShowing) return;
 
-            AlbumArtBlur.Radius = _settings.MediaPopupBlurRadius;
-
             ContentGrid.Opacity = 1;
-            ContentGrid.RenderTransform = new ScaleTransform(1, 1);
-            TransitionFlash.Opacity = 0;
+            MarqueeText.Opacity = 1;
 
             UpdateAllContent();
 
@@ -498,14 +609,14 @@ namespace EarTrumpet.UI.Views
                 ExpandedCover.Visibility = Visibility.Visible;
                 ExpandedCover.Opacity = 1;
                 if (_cachedThumbnail != null) ApplyThumbnail(_cachedThumbnail);
-                ExpandArrow.RenderTransform = new RotateTransform(180);
+                SetExpandArrowState(true);
             }
             else
             {
                 Height = CollapsedHeight;
                 ExpandedCover.Visibility = Visibility.Collapsed;
                 ExpandedCover.Opacity = 0;
-                ExpandArrow.RenderTransform = new RotateTransform(0);
+                SetExpandArrowState(false);
             }
 
             Left = iconBounds.Left + (iconBounds.Width / 2) - (Width / 2);
@@ -519,12 +630,9 @@ namespace EarTrumpet.UI.Views
 
             _isShowing = true;
             Show();
+            ApplyFlyoutAcrylic();
 
-            var storyboard = (Storyboard)FindResource("SlideIn");
-            storyboard.Begin(this);
-
-            var pulseStoryboard = (Storyboard)FindResource("PulseAnimation");
-            pulseStoryboard.Begin(this, true);
+            _slideInStoryboard.Begin(this, true);
 
             StartMarqueeIfNeeded();
 
@@ -561,22 +669,36 @@ namespace EarTrumpet.UI.Views
 
             BeginAnimation(TopProperty, null);
 
-            var pulseStoryboard = (Storyboard)FindResource("PulseAnimation");
-            pulseStoryboard.Stop(this);
-
-            var storyboard = (Storyboard)FindResource("SlideOut");
-            storyboard.Completed += OnSlideOutCompleted;
-            storyboard.Begin(this);
+            _slideOutStoryboard.Completed += OnSlideOutCompleted;
+            _slideOutStoryboard.Begin(this);
         }
 
         private void OnSlideOutCompleted(object sender, EventArgs e)
         {
-            var storyboard = (Storyboard)FindResource("SlideOut");
-            storyboard.Completed -= OnSlideOutCompleted;
+            _slideOutStoryboard.Completed -= OnSlideOutCompleted;
 
             _isShowing = false;
+            AccentPolicyLibrary.DisableAcrylic(this);
             Hide();
             PopupHidden?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void OnSlideInCompleted(object sender, EventArgs e)
+        {
+            CompleteSlideInAnimation();
+        }
+
+        private void CompleteSlideInAnimation()
+        {
+            Opacity = 1;
+            _slideInStoryboard.Stop(this);
+
+            if (MainBorder.RenderTransform is TransformGroup transforms)
+            {
+                ((TranslateTransform)transforms.Children[0]).Y = 0;
+                ((ScaleTransform)transforms.Children[1]).ScaleX = 1;
+                ((ScaleTransform)transforms.Children[1]).ScaleY = 1;
+            }
         }
 
         public void CancelHide()
@@ -600,11 +722,7 @@ namespace EarTrumpet.UI.Views
                     var title = MediaSessionService.Instance.GetCurrentMediaInfo();
                     Dispatcher.BeginInvoke((Action)(() =>
                     {
-                        _cachedTitle = string.IsNullOrEmpty(title) ? "No media playing" : title;
-                        MarqueeText.Text = _cachedTitle;
-                        _marqueePosition = 0;
-                        MarqueeText.SetValue(System.Windows.Controls.Canvas.LeftProperty, 0.0);
-                        _cachedTextWidth = -1;
+                        ApplyTitle(title);
                     }));
                 }
                 catch { }
@@ -615,9 +733,28 @@ namespace EarTrumpet.UI.Views
             _cachedTextWidth = -1;
         }
 
+        private void ApplyTitle(string title)
+        {
+            string displayTitle = string.IsNullOrEmpty(title) ? "No media playing" : title;
+            if (string.Equals(_cachedTitle, displayTitle, StringComparison.Ordinal) &&
+                string.Equals(MarqueeText.Text, displayTitle, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _cachedTitle = displayTitle;
+            MarqueeText.Text = displayTitle;
+            _marqueePosition = 0;
+            MarqueeText.SetValue(System.Windows.Controls.Canvas.LeftProperty, 0.0);
+            _cachedTextWidth = -1;
+            StartMarqueeIfNeeded();
+        }
+
         private void UpdatePlayPauseIcon()
         {
-            PlayPauseIcon.Text = MediaSessionService.Instance.IsMediaPlaying ? "\uE103" : "\uE102";
+            bool isPlaying = MediaSessionService.Instance.IsMediaPlaying;
+            PlayPauseIcon.Data = isPlaying ? PhosphorIconData.Pause : PhosphorIconData.Play;
+            PlayPauseIcon.Margin = isPlaying ? new Thickness(0) : new Thickness(2, 0, 0, 0);
         }
 
         private void StartMarqueeIfNeeded()
@@ -652,23 +789,175 @@ namespace EarTrumpet.UI.Views
             MarqueeText.SetValue(System.Windows.Controls.Canvas.LeftProperty, _marqueePosition);
         }
 
-        private void ProgressBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void ProgressSlider_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (_currentDuration.TotalSeconds <= 0 || ProgressSlider.ActualWidth <= 0)
+            {
+                e.Handled = true;
+                return;
+            }
+
+            _isDraggingProgress = true;
+            _progressTimer.Stop();
+            ProgressSlider.CaptureMouse();
+            UpdateProgressFromPointer(e);
+            e.Handled = true;
+        }
+
+        private void ProgressSlider_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_isDraggingProgress || e.LeftButton != MouseButtonState.Pressed) return;
+
+            UpdateProgressFromPointer(e);
+            e.Handled = true;
+        }
+
+        private void ProgressSlider_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (!_isDraggingProgress) return;
+
+            UpdateProgressFromPointer(e);
+            _isDraggingProgress = false;
+            ProgressSlider.ReleaseMouseCapture();
+            CommitProgressSeek();
+            e.Handled = true;
+        }
+
+        private void ProgressSlider_LostMouseCapture(object sender, MouseEventArgs e)
+        {
+            if (!_isDraggingProgress) return;
+
+            _isDraggingProgress = false;
+            CommitProgressSeek();
+        }
+
+        private void UpdateProgressFromPointer(MouseEventArgs e)
+        {
+            double width = ProgressSlider.ActualWidth;
+            if (width <= 0 || _currentDuration.TotalSeconds <= 0) return;
+
+            double ratio = Math.Max(0, Math.Min(1, e.GetPosition(ProgressSlider).X / width));
+            double seconds = _currentDuration.TotalSeconds * ratio;
+
+            _updatingProgressSlider = true;
+            ProgressSlider.Value = seconds;
+            _updatingProgressSlider = false;
+            PositionText.Text = FormatTime(TimeSpan.FromSeconds(seconds));
+        }
+
+        private void ProgressSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (_updatingProgressSlider) return;
+
+            PositionText.Text = FormatTime(TimeSpan.FromSeconds(Math.Max(0, e.NewValue)));
+            if (!_isDraggingProgress && ProgressSlider.IsKeyboardFocusWithin)
+            {
+                CommitProgressSeek();
+            }
+        }
+
+        private void RenderInterpolatedProgress()
+        {
+            if (_isDraggingProgress || !_hasProgressAnchor) return;
+
+            TimeSpan position = _progressAnchorPosition;
+            if (MediaSessionService.Instance.IsMediaPlaying)
+            {
+                position += DateTime.UtcNow - _progressAnchorTimestamp;
+            }
+
+            RenderProgress(position);
+        }
+
+        private void RenderProgress(TimeSpan position)
+        {
+            double maxSeconds = Math.Max(0, _currentDuration.TotalSeconds);
+            double seconds = Math.Max(0, position.TotalSeconds);
+            if (maxSeconds > 0)
+            {
+                seconds = Math.Min(maxSeconds, seconds);
+            }
+
+            PositionText.Text = FormatTime(TimeSpan.FromSeconds(seconds));
+            _updatingProgressSlider = true;
+            ProgressSlider.Value = Math.Min(ProgressSlider.Maximum, seconds);
+            _updatingProgressSlider = false;
+        }
+
+        private void ApplyTrackThumbnail(BitmapImage thumbnail)
+        {
+            bool fadeLateArtwork = ExpandedCover.Visibility == Visibility.Visible && ExpandedCover.Opacity >= 0.95;
+            if (fadeLateArtwork)
+            {
+                ExpandedCover.BeginAnimation(OpacityProperty, null);
+                ExpandedCover.Opacity = 0.68;
+            }
+
+            ApplyThumbnail(thumbnail);
+
+            if (fadeLateArtwork)
+            {
+                ExpandedCover.BeginAnimation(
+                    OpacityProperty,
+                    new DoubleAnimation(1, TimeSpan.FromMilliseconds(140))
+                    {
+                        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+                    });
+            }
+        }
+
+        private void CommitProgressSeek()
+        {
+            if (_currentDuration.TotalSeconds <= 0) return;
+
+            double seconds = Math.Min(_currentDuration.TotalSeconds, Math.Max(0, ProgressSlider.Value));
+            TimeSpan seekPosition = TimeSpan.FromSeconds(seconds);
+            _progressAnchorPosition = seekPosition;
+            _progressAnchorTimestamp = DateTime.UtcNow;
+            _hasProgressAnchor = true;
+            _pendingSeekPosition = seekPosition;
+            _pendingSeekExpiresAt = DateTime.UtcNow.AddSeconds(5);
+            RenderProgress(seekPosition);
+
+            _seekCts?.Cancel();
+            _seekCts?.Dispose();
+            _seekCts = new CancellationTokenSource();
+            _ = SendSeekWithRetryAsync(seekPosition, _seekCts.Token);
+
+            if (MediaSessionService.Instance.IsMediaPlaying)
+            {
+                _progressTimer.Start();
+            }
+        }
+
+        private async Task SendSeekWithRetryAsync(TimeSpan position, CancellationToken token)
         {
             try
             {
-                var clickPos = e.GetPosition(ProgressBarContainer);
-                var progress = clickPos.X / ProgressBarContainer.ActualWidth;
+                bool accepted = await MediaSessionService.Instance.SeekToAsync(position);
+                if (token.IsCancellationRequested) return;
 
-                TimeSpan position, duration;
-                MediaSessionService.Instance.GetTimelineInfo(out position, out duration);
-                if (duration.TotalSeconds > 0)
+                await Task.Delay(180, token);
+                if (token.IsCancellationRequested) return;
+
+                // Some SMTC providers acknowledge the first request before applying it.
+                bool confirmedRetry = await MediaSessionService.Instance.SeekToAsync(position);
+                if (!accepted && !confirmedRetry && !token.IsCancellationRequested)
                 {
-                    var seekPosition = TimeSpan.FromSeconds(duration.TotalSeconds * Math.Min(1, Math.Max(0, progress)));
-                    MediaSessionService.Instance.SeekTo(seekPosition);
-                    UpdateProgress();
+                    await Task.Delay(320, token);
+                    if (!token.IsCancellationRequested)
+                    {
+                        await MediaSessionService.Instance.SeekToAsync(position);
+                    }
                 }
             }
-            catch (Exception ex) { Trace.WriteLine($"MediaPopupWindow: ProgressBar seek failed - {ex.Message}"); }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"MediaPopupWindow: Seek retry failed - {ex.Message}");
+            }
         }
 
         private void PrevButton_Click(object sender, RoutedEventArgs e)
@@ -711,6 +1000,8 @@ namespace EarTrumpet.UI.Views
 
         private void ExpandButton_Click(object sender, RoutedEventArgs e)
         {
+            CompleteSlideInAnimation();
+
             if (_isExpanded)
             {
                 CollapsePopup();
@@ -732,42 +1023,35 @@ namespace EarTrumpet.UI.Views
             }
 
             if (_cachedThumbnail != null) ApplyThumbnail(_cachedThumbnail);
+            ExpandedCover.BeginAnimation(OpacityProperty, null);
             ExpandedCover.Opacity = 0;
             ExpandedCover.Visibility = Visibility.Visible;
 
-            var heightAnim = new DoubleAnimation
-            {
-                To = ExpandedHeight,
-                Duration = TimeSpan.FromMilliseconds(350),
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-            BeginAnimation(HeightProperty, heightAnim);
+            AnimatePopupGeometry(ExpandedHeight, _collapsedTop - (ExpandedHeight - CollapsedHeight), 240);
+
+            var coverTransforms = (TransformGroup)ExpandedCover.RenderTransform;
+            var coverScale = (ScaleTransform)coverTransforms.Children[0];
+            var coverTranslate = (TranslateTransform)coverTransforms.Children[1];
+            coverScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+            coverScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+            coverTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+            coverScale.ScaleX = 0.985;
+            coverScale.ScaleY = 0.985;
+            coverTranslate.Y = 6;
 
             var opacityAnim = new DoubleAnimation
             {
                 From = 0,
                 To = 1,
-                BeginTime = TimeSpan.FromMilliseconds(100),
-                Duration = TimeSpan.FromMilliseconds(250),
+                Duration = TimeSpan.FromMilliseconds(220),
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };
             ExpandedCover.BeginAnimation(OpacityProperty, opacityAnim);
+            coverScale.BeginAnimation(ScaleTransform.ScaleXProperty, CreateCoverAnimation(0.985, 1, 220));
+            coverScale.BeginAnimation(ScaleTransform.ScaleYProperty, CreateCoverAnimation(0.985, 1, 220));
+            coverTranslate.BeginAnimation(TranslateTransform.YProperty, CreateCoverAnimation(6, 0, 220));
 
-            var rotateAnim = new DoubleAnimation
-            {
-                To = 180,
-                Duration = TimeSpan.FromMilliseconds(250),
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-            ((RotateTransform)ExpandArrow.RenderTransform).BeginAnimation(RotateTransform.AngleProperty, rotateAnim);
-
-            var posAnim = new DoubleAnimation
-            {
-                To = _collapsedTop - (ExpandedHeight - CollapsedHeight),
-                Duration = TimeSpan.FromMilliseconds(350),
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-            BeginAnimation(TopProperty, posAnim);
+            AnimateExpandArrow(true);
         }
 
         private void CollapsePopup()
@@ -779,45 +1063,134 @@ namespace EarTrumpet.UI.Views
                 _settings.MediaPopupIsExpanded = false;
             }
 
-            // Fade out cover first
+            ExpandedCover.BeginAnimation(OpacityProperty, null);
+            var coverTransforms = (TransformGroup)ExpandedCover.RenderTransform;
+            var coverScale = (ScaleTransform)coverTransforms.Children[0];
+            var coverTranslate = (TranslateTransform)coverTransforms.Children[1];
             var coverFadeOut = new DoubleAnimation
             {
                 To = 0,
-                Duration = TimeSpan.FromMilliseconds(150),
+                Duration = TimeSpan.FromMilliseconds(140),
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
             };
             coverFadeOut.Completed += (s, e) =>
             {
-                ExpandedCover.Visibility = Visibility.Collapsed;
+                if (!_isExpanded)
+                {
+                    ExpandedCover.BeginAnimation(OpacityProperty, null);
+                    ExpandedCover.Opacity = 0;
+                    ExpandedCover.Visibility = Visibility.Collapsed;
+                }
             };
             ExpandedCover.BeginAnimation(OpacityProperty, coverFadeOut);
+            coverScale.BeginAnimation(ScaleTransform.ScaleXProperty, CreateCoverAnimation(1, 0.99, 140, EasingMode.EaseIn));
+            coverScale.BeginAnimation(ScaleTransform.ScaleYProperty, CreateCoverAnimation(1, 0.99, 140, EasingMode.EaseIn));
+            coverTranslate.BeginAnimation(TranslateTransform.YProperty, CreateCoverAnimation(0, -4, 140, EasingMode.EaseIn));
 
-            // Rotate arrow back
-            var rotateAnim = new DoubleAnimation
+            AnimateExpandArrow(false);
+            AnimatePopupGeometry(CollapsedHeight, _collapsedTop, 200);
+        }
+
+        private static DoubleAnimation CreateCoverAnimation(double from, double to, int durationMs, EasingMode easingMode = EasingMode.EaseOut)
+        {
+            return new DoubleAnimation(from, to, TimeSpan.FromMilliseconds(durationMs))
+            {
+                EasingFunction = new CubicEase { EasingMode = easingMode }
+            };
+        }
+
+        private void SetPopupGeometry(double height, double top)
+        {
+            BeginAnimation(HeightProperty, null);
+            BeginAnimation(TopProperty, null);
+            Height = height;
+            Top = top;
+        }
+
+        private void AnimatePopupGeometry(double targetHeight, double targetTop, int durationMs)
+        {
+            double startHeight = ActualHeight > 0 ? ActualHeight : Height;
+            double startTop = Top;
+
+            SetPopupGeometry(targetHeight, targetTop);
+
+            var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+            BeginAnimation(HeightProperty, new DoubleAnimation(startHeight, targetHeight, TimeSpan.FromMilliseconds(durationMs))
+            {
+                EasingFunction = easing,
+                FillBehavior = FillBehavior.Stop
+            }, HandoffBehavior.SnapshotAndReplace);
+            BeginAnimation(TopProperty, new DoubleAnimation(startTop, targetTop, TimeSpan.FromMilliseconds(durationMs))
+            {
+                EasingFunction = easing,
+                FillBehavior = FillBehavior.Stop
+            }, HandoffBehavior.SnapshotAndReplace);
+        }
+
+        private void RefreshProgressAfterLayout()
+        {
+            Dispatcher.BeginInvoke((Action)UpdateProgress, DispatcherPriority.Render);
+        }
+
+        private void SetExpandArrowState(bool expanded)
+        {
+            ExpandArrowDown.BeginAnimation(OpacityProperty, null);
+            ExpandArrowUp.BeginAnimation(OpacityProperty, null);
+            ExpandArrowDown.Opacity = expanded ? 1 : 0;
+            ExpandArrowUp.Opacity = expanded ? 0 : 1;
+
+            var downTranslate = GetArrowTranslate(ExpandArrowDown);
+            var upTranslate = GetArrowTranslate(ExpandArrowUp);
+            downTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+            upTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+            downTranslate.Y = 0;
+            upTranslate.Y = 0;
+        }
+
+        private void AnimateExpandArrow(bool expanded)
+        {
+            var incoming = expanded ? ExpandArrowDown : ExpandArrowUp;
+            var outgoing = expanded ? ExpandArrowUp : ExpandArrowDown;
+            var direction = expanded ? -1d : 1d;
+            var easeOut = new CubicEase { EasingMode = EasingMode.EaseOut };
+
+            outgoing.BeginAnimation(OpacityProperty, new DoubleAnimation
             {
                 To = 0,
-                Duration = TimeSpan.FromMilliseconds(250),
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
-            };
-            ((RotateTransform)ExpandArrow.RenderTransform).BeginAnimation(RotateTransform.AngleProperty, rotateAnim);
-
-            // Animate height down
-            var heightAnim = new DoubleAnimation
+                Duration = TimeSpan.FromMilliseconds(80),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+            });
+            GetArrowTranslate(outgoing).BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation
             {
-                To = CollapsedHeight,
-                Duration = TimeSpan.FromMilliseconds(300),
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
-            };
-            BeginAnimation(HeightProperty, heightAnim);
+                To = direction * 2,
+                Duration = TimeSpan.FromMilliseconds(80),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+            });
 
-            // Animate position back up
-            var posAnim = new DoubleAnimation
+            incoming.BeginAnimation(OpacityProperty, new DoubleAnimation
             {
-                To = _collapsedTop,
-                Duration = TimeSpan.FromMilliseconds(300),
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
-            };
-            BeginAnimation(TopProperty, posAnim);
+                From = 0,
+                To = 1,
+                Duration = TimeSpan.FromMilliseconds(120),
+                EasingFunction = easeOut
+            });
+            GetArrowTranslate(incoming).BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation
+            {
+                From = -direction * 2,
+                To = 0,
+                Duration = TimeSpan.FromMilliseconds(120),
+                EasingFunction = easeOut
+            });
+        }
+
+        private static TranslateTransform GetArrowTranslate(System.Windows.Shapes.Path arrow)
+        {
+            if (arrow.RenderTransform is TransformGroup group)
+            {
+                return (TranslateTransform)group.Children[1];
+            }
+
+            return (TranslateTransform)arrow.RenderTransform;
         }
 
         // ═══════════════════════════════════
@@ -825,7 +1198,9 @@ namespace EarTrumpet.UI.Views
         // ═══════════════════════════════════
 
         private int _currentVolume = 100;
+        private bool _currentVolumeMuted;
         private bool _isDraggingVolume;
+        private ViewModels.IAppItemViewModel _volumeDragTarget;
 
         private void VolumeButton_Click(object sender, RoutedEventArgs e)
         {
@@ -837,21 +1212,19 @@ namespace EarTrumpet.UI.Views
                     app.IsMuted = !app.IsMuted;
                     UpdateVolumeVisual(app.Volume, app.IsMuted);
                 }
-                else
-                {
-                    var collection = ((App)Application.Current).CollectionViewModel;
-                    if (collection?.Default != null)
-                    {
-                        collection.Default.IsMuted = !collection.Default.IsMuted;
-                        UpdateVolumeVisual(collection.Default.Volume, collection.Default.IsMuted);
-                    }
-                }
             }
             catch (Exception ex) { Trace.WriteLine($"MediaPopupWindow: VolumeButton_Click failed - {ex.Message}"); }
         }
 
         private void VolumeTrack_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            _volumeDragTarget = FindCurrentMediaApp();
+            if (_volumeDragTarget == null)
+            {
+                e.Handled = true;
+                return;
+            }
+
             _isDraggingVolume = true;
             ((System.Windows.IInputElement)sender).CaptureMouse();
             ApplyVolumeFromMouse(e);
@@ -869,6 +1242,7 @@ namespace EarTrumpet.UI.Views
         private void VolumeTrack_MouseUp(object sender, MouseButtonEventArgs e)
         {
             _isDraggingVolume = false;
+            _volumeDragTarget = null;
             ((System.Windows.IInputElement)sender).ReleaseMouseCapture();
             e.Handled = true;
         }
@@ -884,20 +1258,11 @@ namespace EarTrumpet.UI.Views
                 _currentVolume = volume;
                 UpdateVolumeVisual(volume, false);
 
-                var app = FindCurrentMediaApp();
+                var app = _volumeDragTarget;
                 if (app != null)
                 {
                     app.Volume = volume;
                     if (app.IsMuted && volume > 0) app.IsMuted = false;
-                }
-                else
-                {
-                    var collection = ((App)Application.Current).CollectionViewModel;
-                    if (collection?.Default != null)
-                    {
-                        collection.Default.Volume = volume;
-                        if (collection.Default.IsMuted && volume > 0) collection.Default.IsMuted = false;
-                    }
                 }
             }
             catch (Exception ex) { Trace.WriteLine($"MediaPopupWindow: ApplyVolumeFromMouse failed - {ex.Message}"); }
@@ -910,24 +1275,38 @@ namespace EarTrumpet.UI.Views
                 var app = FindCurrentMediaApp();
                 if (app != null)
                 {
+                    SetVolumeControlEnabled(true);
                     _currentVolume = app.Volume;
                     UpdateVolumeVisual(app.Volume, app.IsMuted);
                 }
                 else
                 {
-                    var collection = ((App)Application.Current).CollectionViewModel;
-                    if (collection?.Default != null)
-                    {
-                        _currentVolume = collection.Default.Volume;
-                        UpdateVolumeVisual(collection.Default.Volume, collection.Default.IsMuted);
-                    }
+                    SetVolumeControlEnabled(false);
                 }
             }
             catch (Exception ex) { Trace.WriteLine($"MediaPopupWindow: UpdateVolumeState failed - {ex.Message}"); }
         }
 
+        private void SetVolumeControlEnabled(bool enabled)
+        {
+            VolumeControl.IsEnabled = enabled;
+            VolumeControl.Opacity = enabled ? 1 : 0.45;
+            VolumeTrackContainer.Cursor = enabled ? Cursors.Hand : Cursors.Arrow;
+        }
+
+        private void VolumeTrackContainer_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (e.NewSize.Width > 0)
+            {
+                UpdateVolumeVisual(_currentVolume, _currentVolumeMuted);
+            }
+        }
+
         private void UpdateVolumeVisual(int volume, bool isMuted)
         {
+            _currentVolume = volume;
+            _currentVolumeMuted = isMuted;
+
             // Update fill width + thumb position
             var containerWidth = VolumeTrackContainer.ActualWidth;
             if (containerWidth > 0)
@@ -942,20 +1321,14 @@ namespace EarTrumpet.UI.Views
 
             // Update icon
             if (isMuted || volume == 0)
-                VolumeIcon.Text = "\uE74F"; // Mute
+                VolumeIcon.Data = PhosphorIconData.SpeakerSlash;
             else if (volume < 33)
-                VolumeIcon.Text = "\uE993"; // Low
+                VolumeIcon.Data = PhosphorIconData.SpeakerNone;
             else if (volume < 66)
-                VolumeIcon.Text = "\uE994"; // Medium
+                VolumeIcon.Data = PhosphorIconData.SpeakerLow;
             else
-                VolumeIcon.Text = "\uE995"; // High
+                VolumeIcon.Data = PhosphorIconData.SpeakerHigh;
 
-            // Update fill color to match accent
-            VolGradient1.Color = _cachedDominantColor;
-            VolGradient2.Color = Color.FromArgb(255,
-                (byte)Math.Min(255, _cachedDominantColor.R + 50),
-                (byte)Math.Min(255, _cachedDominantColor.G + 50),
-                (byte)Math.Min(255, _cachedDominantColor.B + 50));
         }
 
         /// <summary>
@@ -969,50 +1342,17 @@ namespace EarTrumpet.UI.Views
                 var collection = ((App)Application.Current).CollectionViewModel;
                 if (collection == null) return null;
 
-                // Get source app from cached MediaSessionService info (no async calls)
-                string sourceApp = null;
-                if (MediaSessionService.Instance.IsUsingLegacyPlayer)
-                {
-                    sourceApp = MediaSessionService.Instance.LegacyPlayerName;
-                }
+                string sourceApp = MediaSessionService.Instance.IsUsingLegacyPlayer
+                    ? MediaSessionService.Instance.LegacyPlayerName
+                    : MediaSessionService.Instance.CurrentSourceAppId;
 
-                // Search through all devices and apps
+                if (string.IsNullOrWhiteSpace(sourceApp)) return null;
+
                 foreach (var device in collection.AllDevices)
                 {
                     foreach (var app in device.Apps)
                     {
-                        // Match by ExeName
-                        if (!string.IsNullOrEmpty(sourceApp) && 
-                            !string.IsNullOrEmpty(app.ExeName) &&
-                            app.ExeName.IndexOf(sourceApp, StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            return app;
-                        }
-
-                        // Match common media apps by name
-                        var exeLower = (app.ExeName ?? "").ToLowerInvariant();
-                        if (exeLower.Contains("spotify") || exeLower.Contains("chrome") || 
-                            exeLower.Contains("firefox") || exeLower.Contains("msedge") ||
-                            exeLower.Contains("vlc") || exeLower.Contains("musicbee") ||
-                            exeLower.Contains("foobar") || exeLower.Contains("winamp") ||
-                            exeLower.Contains("aimp") || exeLower.Contains("itunes") ||
-                            exeLower.Contains("groove") || exeLower.Contains("wmplayer"))
-                        {
-                            // Only return if it's the active (non-zero peak) session
-                            if (app.PeakValue1 > 0 || app.PeakValue2 > 0)
-                            {
-                                return app;
-                            }
-                        }
-                    }
-                }
-
-                // Fallback: find any app with audio activity (skip system sounds)
-                foreach (var device in collection.AllDevices)
-                {
-                    foreach (var app in device.Apps)
-                    {
-                        if ((app.PeakValue1 > 0 || app.PeakValue2 > 0) && !string.IsNullOrEmpty(app.ExeName))
+                        if (DoesMediaSourceMatch(app, sourceApp))
                         {
                             return app;
                         }
@@ -1022,6 +1362,24 @@ namespace EarTrumpet.UI.Views
             catch (Exception ex) { Trace.WriteLine($"MediaPopupWindow: FindCurrentMediaApp failed - {ex.Message}"); }
 
             return null;
+        }
+
+        private static bool DoesMediaSourceMatch(ViewModels.IAppItemViewModel app, string sourceApp)
+        {
+            if (!string.IsNullOrWhiteSpace(app.AppId) &&
+                (string.Equals(app.AppId, sourceApp, StringComparison.OrdinalIgnoreCase) ||
+                 sourceApp.IndexOf(app.AppId, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 app.AppId.IndexOf(sourceApp, StringComparison.OrdinalIgnoreCase) >= 0))
+            {
+                return true;
+            }
+
+            string exeName = System.IO.Path.GetFileNameWithoutExtension(app.ExeName ?? string.Empty);
+            if (exeName.Length < 3) return false;
+
+            string sourceName = System.IO.Path.GetFileNameWithoutExtension(sourceApp);
+            return string.Equals(exeName, sourceName, StringComparison.OrdinalIgnoreCase) ||
+                   sourceApp.IndexOf(exeName, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         public bool IsShowing => _isShowing;

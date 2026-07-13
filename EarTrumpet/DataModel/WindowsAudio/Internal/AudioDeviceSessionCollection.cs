@@ -99,6 +99,12 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
 
             if (_parent.TryGetTarget(out var parent))
             {
+                if (session.IsSystemSoundsSession)
+                {
+                    AddSystemSoundsSession(parent, session);
+                    return;
+                }
+
                 foreach (AudioDeviceSessionGroup appGroup in _sessions)
                 {
                     if (appGroup.AppId == session.AppId)
@@ -123,6 +129,35 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
 
                 _sessions.Add(new AudioDeviceSessionGroup(parent, new AudioDeviceSessionGroup(parent, session)));
             }
+        }
+
+        private void AddSystemSoundsSession(IAudioDevice parent, IAudioDeviceSession session)
+        {
+            var groupingParam = ((IAudioDeviceSessionInternal)session).GroupingParam;
+
+            foreach (AudioDeviceSessionGroup appGroup in _sessions)
+            {
+                if (!appGroup.IsSystemSoundsSession || appGroup.GroupingParam != groupingParam)
+                {
+                    continue;
+                }
+
+                foreach (AudioDeviceSessionGroup appSessionGroup in appGroup.Sessions)
+                {
+                    if (appSessionGroup.GroupingParam == groupingParam)
+                    {
+                        session.IsMuted = session.IsMuted || appSessionGroup.IsMuted;
+                        appSessionGroup.AddSession(session);
+                        return;
+                    }
+                }
+
+                session.IsMuted = session.IsMuted || appGroup.IsMuted;
+                appGroup.AddSession(new AudioDeviceSessionGroup(parent, session));
+                return;
+            }
+
+            _sessions.Add(new AudioDeviceSessionGroup(parent, new AudioDeviceSessionGroup(parent, session)));
         }
 
         internal void UnHideSessionsForProcessId(int processId)

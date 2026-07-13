@@ -29,28 +29,14 @@ namespace EarTrumpet.UI.ViewModels
 
         public string HoverDelayText => $"{HoverDelay:F2}s";
 
-        // Blur radius (0 - 30)
-        public double BlurRadius
+        // Keep the popup available for paused SMTC sessions so playback can resume from it.
+        public bool ShowWhenPaused
         {
-            get => _settings.MediaPopupBlurRadius;
+            get => !_settings.MediaPopupShowOnlyWhenPlaying;
             set
             {
-                _settings.MediaPopupBlurRadius = value;
-                RaisePropertyChanged(nameof(BlurRadius));
-                RaisePropertyChanged(nameof(BlurRadiusText));
-            }
-        }
-
-        public string BlurRadiusText => $"{BlurRadius:F0}px";
-
-        // Only show when media is playing
-        public bool ShowOnlyWhenPlaying
-        {
-            get => _settings.MediaPopupShowOnlyWhenPlaying;
-            set
-            {
-                _settings.MediaPopupShowOnlyWhenPlaying = value;
-                RaisePropertyChanged(nameof(ShowOnlyWhenPlaying));
+                _settings.MediaPopupShowOnlyWhenPlaying = !value;
+                RaisePropertyChanged(nameof(ShowWhenPaused));
             }
         }
 

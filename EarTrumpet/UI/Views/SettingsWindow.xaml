@@ -1958,78 +1958,10 @@
                             <Border Height="1" Background="#10FFFFFF" Margin="0,0,0,14" />
 
                             <!-- Behavior options -->
-                            <CheckBox Content="{x:Static resx:Resources.SettingsOnlyWhenPlaying}"
-                                      IsChecked="{Binding ShowOnlyWhenPlaying, Mode=TwoWay}" Margin="0,0,0,8" />
+                            <CheckBox Content="{x:Static resx:Resources.SettingsShowWhenPaused}"
+                                      IsChecked="{Binding ShowWhenPaused, Mode=TwoWay}" Margin="0,0,0,8" />
                             <CheckBox Content="{x:Static resx:Resources.SettingsRememberExpanded}"
                                       IsChecked="{Binding RememberExpanded, Mode=TwoWay}" />
-                        </StackPanel>
-                    </Border>
-
-                    <!-- SECTION: Visual Effects + Preview -->
-                    <Border Style="{StaticResource SectionCardBorder}"
-                            IsEnabled="{Binding MediaPopupEnabled}">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                                <Border Style="{StaticResource SectionIconBorder}">
-                                    <TextBlock Text="&#xE81C;" FontFamily="Segoe MDL2 Assets" FontSize="18"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center"
-                                               Foreground="White" />
-                                </Border>
-                                <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="{x:Static resx:Resources.SettingsVisualEffects}" FontSize="15" FontWeight="SemiBold" />
-                                    <TextBlock Text="{x:Static resx:Resources.SettingsVisualEffectsDesc}"
-                                               Style="{StaticResource BodySubText}" FontSize="12" />
-                                </StackPanel>
-                            </StackPanel>
-
-                            <!-- Live preview of blur effect -->
-                            <Border CornerRadius="8" Height="80" Margin="0,0,0,16"
-                                    ClipToBounds="True" Background="{StaticResource BorderSubtleBrush}">
-                                <Grid>
-                                    <!-- Simulated album art background with blur -->
-                                    <Border CornerRadius="8">
-                                        <Border.Background>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                <GradientStop Color="#FF6B4E9B" Offset="0"/>
-                                                <GradientStop Color="#FF2E86AB" Offset="0.5"/>
-                                                <GradientStop Color="#FFA23B72" Offset="1"/>
-                                            </LinearGradientBrush>
-                                        </Border.Background>
-                                        <Border.Effect>
-                                            <BlurEffect Radius="{Binding BlurRadius}" />
-                                        </Border.Effect>
-                                    </Border>
-                                    <!-- Overlay content preview -->
-                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Opacity="0.9">
-                                        <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="22"
-                                                   HorizontalAlignment="Center" Foreground="White" />
-                                        <TextBlock Text="{x:Static resx:Resources.ColorLabelPreview}" FontSize="11" HorizontalAlignment="Center"
-                                                   Foreground="White" Opacity="0.7" Margin="0,2,0,0" />
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-
-                            <!-- Blur slider -->
-                            <Grid Margin="0,0,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="60" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="{x:Static resx:Resources.SettingsBlurNone}" Style="{StaticResource BodySubText}"
-                                           VerticalAlignment="Center" Margin="0,0,12,0" />
-                                <Slider Grid.Column="1" Minimum="0" Maximum="30"
-                                        Value="{Binding BlurRadius, Mode=TwoWay}"
-                                        SmallChange="1" LargeChange="5" IsSnapToTickEnabled="False" />
-                                <TextBlock Grid.Column="2" Text="{x:Static resx:Resources.SettingsBlurMax}" Style="{StaticResource BodySubText}"
-                                           VerticalAlignment="Center" Margin="12,0,0,0" />
-                                <Border Grid.Column="3" Padding="8,4" CornerRadius="6" Background="{StaticResource BorderSubtleBrush}"
-                                        HorizontalAlignment="Right" Margin="12,0,0,0">
-                                    <TextBlock Text="{Binding BlurRadiusText}" FontWeight="SemiBold"
-                                               HorizontalAlignment="Center" FontSize="13" />
-                                </Border>
-                            </Grid>
                         </StackPanel>
                     </Border>
 

@@ -486,7 +486,13 @@ namespace EarTrumpet
                         {
                             _mediaPopupDelayTimer.Stop();
 
-                            if (Settings.MediaPopupShowOnlyWhenPlaying && !DataModel.MediaSessionService.Instance.IsMediaPlaying)
+                            var mediaService = DataModel.MediaSessionService.Instance;
+                            if (Settings.MediaPopupShowOnlyWhenPlaying && !mediaService.IsMediaPlaying)
+                            {
+                                return;
+                            }
+
+                            if (!Settings.MediaPopupShowOnlyWhenPlaying && !mediaService.HasControllableSession)
                             {
                                 return;
                             }

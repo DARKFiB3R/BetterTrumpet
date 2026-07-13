@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Windows.Foundation;
@@ -75,6 +76,24 @@ namespace EarTrumpet.DataModel
         /// </summary>
         public bool IsInitialized => _isInitialized;
 
+        /// <summary>
+        /// Gets whether Windows still exposes a media session that can be resumed.
+        /// </summary>
+        public bool HasControllableSession
+        {
+            get
+            {
+                try
+                {
+                    return GetCurrentSession() != null || _legacyService?.IsPlaying == true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+        }
+
         private MediaSessionService()
         {
             _dispatcher = Dispatcher.CurrentDispatcher;
@@ -137,6 +156,25 @@ namespace EarTrumpet.DataModel
         /// Get legacy player name
         /// </summary>
         public string LegacyPlayerName => _legacyService?.CurrentPlayerName;
+
+        /// <summary>
+        /// Gets the Windows app identifier for the media session currently shown by the popup.
+        /// </summary>
+        public string CurrentSourceAppId
+        {
+            get
+            {
+                try
+                {
+                    return GetCurrentSession()?.SourceAppUserModelId;
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"MediaSessionService: CurrentSourceAppId failed - {ex.Message}");
+                    return null;
+                }
+            }
+        }
 
         private void Initialize()
         {
@@ -847,7 +885,7 @@ namespace EarTrumpet.DataModel
         /// <summary>
         /// Seek to position
         /// </summary>
-        public void SeekTo(TimeSpan position)
+        public async Task<bool> SeekToAsync(TimeSpan position)
         {
             try
             {
@@ -855,15 +893,16 @@ namespace EarTrumpet.DataModel
                 if (session == null)
                 {
                     _legacyService?.SeekTo(position);
-                    return;
+                    return _legacyService != null;
                 }
 
-                var _ = session.TryChangePlaybackPositionAsync(position.Ticks);
+                return await session.TryChangePlaybackPositionAsync(position.Ticks);
             }
             catch (Exception ex)
             {
                 Trace.WriteLine($"MediaSessionService: SeekTo failed - {ex.Message}");
                 _legacyService?.SeekTo(position);
+                return false;
             }
         }
 

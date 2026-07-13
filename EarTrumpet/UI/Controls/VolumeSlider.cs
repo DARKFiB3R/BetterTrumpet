@@ -146,8 +146,17 @@ namespace EarTrumpet.UI.Controls
             // Initialize peak meter style
             ApplyPeakMeterStyle();
             
-            // Apply custom colors if enabled
+            // Apply custom colors if enabled.
             ApplyCustomColors();
+
+            // The theme system (ThemeBindingInfo) applies Theme:Brush values to the template
+            // parts (thumb, track, peak meters) in their own Loaded handlers, as local values.
+            // Depending on Loaded ordering, that can overwrite the custom colors we just set,
+            // which is why a freshly created slider (new/relaunched app) can revert to the
+            // default theme while sliders present at startup stay themed (a global ThemeChanged
+            // re-applies over them). Re-apply after the theme system finishes so custom colors
+            // always win, regardless of Loaded ordering.
+            Dispatcher.BeginInvoke(new Action(ApplyCustomColors), System.Windows.Threading.DispatcherPriority.Loaded);
             
             // Subscribe to settings changes for live preview
             if (App.Settings != null)

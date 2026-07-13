@@ -2336,6 +2336,9 @@ namespace EarTrumpet.Properties {
         public static string SettingsOnlyWhenPlaying {
             get { return ResourceManager.GetString("SettingsOnlyWhenPlaying", resourceCulture); }
         }
+        public static string SettingsShowWhenPaused {
+            get { return ResourceManager.GetString("SettingsShowWhenPaused", resourceCulture); }
+        }
         public static string SettingsRememberExpanded {
             get { return ResourceManager.GetString("SettingsRememberExpanded", resourceCulture); }
         }

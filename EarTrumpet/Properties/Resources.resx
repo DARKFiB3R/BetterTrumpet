@@ -1010,6 +1010,9 @@ Open [https://eartrumpet.app/jmp/fixfonts] now?</value>
   <data name="SettingsOnlyWhenPlaying" xml:space="preserve">
     <value>Only show when media is playing</value>
   </data>
+  <data name="SettingsShowWhenPaused" xml:space="preserve">
+    <value>Show controls when media is paused</value>
+  </data>
   <data name="SettingsRememberExpanded" xml:space="preserve">
     <value>Remember expanded/collapsed state</value>
   </data>
