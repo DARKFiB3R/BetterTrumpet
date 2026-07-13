@@ -34,10 +34,8 @@ namespace EarTrumpet.UI.Controls
         private double _lastSoundValue = -1;
         private DateTime _lastSoundTime = DateTime.MinValue;
         private const int SoundThrottleMs = 50; // Min time between sounds
-        private const int MonkeySoundThrottleMs = 7800;
         private static System.Windows.Media.MediaPlayer _tickPlayer; // Static to reuse across sliders
         private static string _tickPlayerResourcePath;
-        private static DateTime _lastMonkeySoundTime = DateTime.MinValue;
 
         public float PeakValue1
         {
@@ -820,13 +818,16 @@ namespace EarTrumpet.UI.Controls
             if (App.Settings?.UseVolumeTickSound != true)
                 return;
 
+            var useMonkeySound = App.Settings?.MonkeyTickSoundUnlocked == true &&
+                                 App.Settings?.UseMonkeyTickSound == true;
+
             // Throttle sounds to avoid overwhelming audio feedback
             var now = DateTime.UtcNow;
             if ((now - _lastSoundTime).TotalMilliseconds < SoundThrottleMs)
                 return;
 
             // Only play if value actually changed by a meaningful amount
-            if (_lastSoundValue >= 0 && Math.Abs(newValue - _lastSoundValue) < 1)
+            if (!useMonkeySound && _lastSoundValue >= 0 && Math.Abs(newValue - _lastSoundValue) < 1)
                 return;
 
             _lastSoundTime = now;
@@ -834,15 +835,13 @@ namespace EarTrumpet.UI.Controls
 
             try
             {
-                var useMonkeySound = App.Settings?.MonkeyTickSoundUnlocked == true &&
-                                     App.Settings?.UseMonkeyTickSound == true;
-
-                // The supplied monkey clip is much longer than the regular tick. Let it
-                // finish instead of restarting it on every slider update.
-                if (useMonkeySound && (now - _lastMonkeySoundTime).TotalMilliseconds < MonkeySoundThrottleMs)
+                if (useMonkeySound)
+                {
+                    MonkeySoundPlayer.Play(newValue);
                     return;
+                }
 
-                var resourcePath = useMonkeySound ? "Assets/monkey.mp3" : "Assets/tick.wav";
+                const string resourcePath = "Assets/tick.wav";
 
                 // Initialize or reload the shared player when the selected sound changes.
                 if (_tickPlayer == null || !string.Equals(_tickPlayerResourcePath, resourcePath, StringComparison.Ordinal))
@@ -854,7 +853,7 @@ namespace EarTrumpet.UI.Controls
                     var streamResourceInfo = Application.GetResourceStream(new Uri($"pack://application:,,,/{resourcePath}"));
                     if (streamResourceInfo != null)
                     {
-                        var tempFileName = useMonkeySound ? "bettertrumpet_monkey.mp3" : "bettertrumpet_tick.wav";
+                        var tempFileName = "bettertrumpet_tick.wav";
                         var tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), tempFileName);
 
                         using (var fileStream = System.IO.File.Create(tempPath))
@@ -877,10 +876,6 @@ namespace EarTrumpet.UI.Controls
                     // Reset to beginning and play
                     _tickPlayer.Position = TimeSpan.Zero;
                     _tickPlayer.Play();
-                    if (useMonkeySound)
-                    {
-                        _lastMonkeySoundTime = now;
-                    }
                 }
             }
             catch (Exception ex)
@@ -888,5 +883,6 @@ namespace EarTrumpet.UI.Controls
                 System.Diagnostics.Trace.WriteLine($"VolumeSlider: Failed to play tick sound — {ex.Message}");
             }
         }
+
     }
 }

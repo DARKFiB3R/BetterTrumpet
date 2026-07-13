@@ -911,7 +911,7 @@ Open [https://eartrumpet.app/jmp/fixfonts] now?</value>
     <value>Monkey mode unlocked!</value>
   </data>
   <data name="MonkeyTickSoundUnlockedDescription" xml:space="preserve">
-    <value>You found the secret volume sound. The monkey clip plays instead of the regular tick.</value>
+    <value>You found the secret volume sounds. The monkey changes as the volume rises.</value>
   </data>
   <data name="SettingsUseMonkeyTickSound" xml:space="preserve">
     <value>Use the monkey sound instead of the tick</value>

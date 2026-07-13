@@ -18,6 +18,8 @@ namespace EarTrumpet.UI.Helpers
 {
     public class ShellNotifyIcon
     {
+        private const double TrayContextMenuGap = 8;
+
         public class SecondaryInvokeArgs
         {
             public InputType InputType { get; set; }
@@ -344,13 +346,9 @@ namespace EarTrumpet.UI.Helpers
                     ItemsSource = itemsSource
                 };
 
-                if (point.X > 0 && point.Y > 0)
+                if (HasValidContextMenuPoint(point))
                 {
-                    contextMenu.Placement = PlacementMode.Top;
-                    contextMenu.PlacementRectangle = Rect.Empty;
-                    contextMenu.PlacementTarget = null;
-                    contextMenu.HorizontalOffset = point.X / (WindowsTaskbar.Dpi / (double)96);
-                    contextMenu.VerticalOffset = point.Y / (WindowsTaskbar.Dpi / (double)96);
+                    ConfigureTrayContextMenuPlacement(contextMenu, point);
                 }
 
                 Themes.Options.SetSource(contextMenu, Themes.Options.SourceKind.System);
@@ -366,14 +364,19 @@ namespace EarTrumpet.UI.Helpers
                 contextMenu.Opened += (_, __) =>
                 {
                     Trace.WriteLine("ShellNotifyIcon ContextMenu.Opened");
-                // Workaround: The framework expects there to already be a WPF window open and thus fails to take focus.
-                User32.SetForegroundWindow(((HwndSource)HwndSource.FromVisual(contextMenu)).Handle);
+                    // Workaround: The framework expects there to already be a WPF window open and thus fails to take focus.
+                    var popupSource = (HwndSource)HwndSource.FromVisual(contextMenu);
+                    User32.SetForegroundWindow(popupSource.Handle);
                     contextMenu.Focus();
                     contextMenu.StaysOpen = false;
-                // Disable only the exit animation.
-                var popup = (Popup)contextMenu.Parent;
-                popup.PopupAnimation = PopupAnimation.None;
-                ApplyTrayContextMenuAcrylic(popup, contextMenu);
+                    // Disable only the exit animation.
+                    var popup = (Popup)contextMenu.Parent;
+                    popup.PopupAnimation = PopupAnimation.None;
+                    ApplyTrayContextMenuAcrylic(popup, contextMenu);
+                    if (HasValidContextMenuPoint(point))
+                    {
+                        PositionTrayContextMenu(popupSource.Handle, point);
+                    }
                 };
                 contextMenu.Closed += (_, __) =>
                 {
@@ -382,6 +385,139 @@ namespace EarTrumpet.UI.Helpers
                 };
                 contextMenu.IsOpen = true;
             }
+        }
+
+        private static void ConfigureTrayContextMenuPlacement(ContextMenu contextMenu, Point point)
+        {
+            var screen = System.Windows.Forms.Screen.FromPoint(
+                new System.Drawing.Point((int)point.X, (int)point.Y));
+            var taskbarPosition = GetTaskbarPosition(screen);
+            var dpiScale = Math.Max(1, WindowsTaskbar.Dpi / (double)96);
+            var horizontalOffset = point.X / dpiScale;
+            var verticalOffset = point.Y / dpiScale;
+
+            contextMenu.PlacementRectangle = Rect.Empty;
+            contextMenu.PlacementTarget = null;
+
+            switch (taskbarPosition)
+            {
+                case WindowsTaskbar.Position.Top:
+                    contextMenu.Placement = PlacementMode.Bottom;
+                    verticalOffset = (screen.WorkingArea.Top / dpiScale) + TrayContextMenuGap;
+                    break;
+
+                case WindowsTaskbar.Position.Left:
+                    contextMenu.Placement = PlacementMode.Right;
+                    horizontalOffset = (screen.WorkingArea.Left / dpiScale) + TrayContextMenuGap;
+                    break;
+
+                case WindowsTaskbar.Position.Right:
+                    contextMenu.Placement = PlacementMode.Left;
+                    horizontalOffset = (screen.WorkingArea.Right / dpiScale) - TrayContextMenuGap;
+                    break;
+
+                default:
+                    contextMenu.Placement = PlacementMode.Top;
+                    verticalOffset = (screen.WorkingArea.Bottom / dpiScale) - TrayContextMenuGap;
+                    break;
+            }
+
+            contextMenu.HorizontalOffset = horizontalOffset;
+            contextMenu.VerticalOffset = verticalOffset;
+        }
+
+        private static bool HasValidContextMenuPoint(Point point)
+        {
+            // WM_CONTEXTMENU uses (-1,-1) for keyboard invocation. Negative screen
+            // coordinates are otherwise valid on monitors left of or above primary.
+            return point.X != -1 || point.Y != -1;
+        }
+
+        private static void PositionTrayContextMenu(IntPtr popupHwnd, Point point)
+        {
+            if (popupHwnd == IntPtr.Zero || !User32.GetWindowRect(popupHwnd, out var popupRect))
+            {
+                return;
+            }
+
+            var screen = System.Windows.Forms.Screen.FromPoint(
+                new System.Drawing.Point((int)point.X, (int)point.Y));
+            var workArea = screen.WorkingArea;
+            var taskbarPosition = GetTaskbarPosition(screen);
+            var dpiScale = Math.Max(1, User32.GetDpiForWindow(popupHwnd) / (double)96);
+            var gap = Math.Max(1, (int)Math.Round(TrayContextMenuGap * dpiScale));
+            var width = popupRect.Right - popupRect.Left;
+            var height = popupRect.Bottom - popupRect.Top;
+            var left = popupRect.Left;
+            var top = popupRect.Top;
+
+            switch (taskbarPosition)
+            {
+                case WindowsTaskbar.Position.Top:
+                    top = workArea.Top + gap;
+                    break;
+
+                case WindowsTaskbar.Position.Left:
+                    left = workArea.Left + gap;
+                    break;
+
+                case WindowsTaskbar.Position.Right:
+                    left = workArea.Right - width - gap;
+                    break;
+
+                default:
+                    top = workArea.Bottom - height - gap;
+                    break;
+            }
+
+            var minLeft = workArea.Left + gap;
+            var maxLeft = Math.Max(minLeft, workArea.Right - width - gap);
+            var minTop = workArea.Top + gap;
+            var maxTop = Math.Max(minTop, workArea.Bottom - height - gap);
+            left = Math.Max(minLeft, Math.Min(left, maxLeft));
+            top = Math.Max(minTop, Math.Min(top, maxTop));
+
+            User32.SetWindowPos(
+                popupHwnd,
+                IntPtr.Zero,
+                left,
+                top,
+                0,
+                0,
+                User32.WindowPosFlags.SWP_NOSIZE |
+                User32.WindowPosFlags.SWP_NOZORDER |
+                User32.WindowPosFlags.SWP_NOACTIVATE);
+
+            Trace.WriteLine(
+                $"ShellNotifyIcon ContextMenu positioned: Edge={taskbarPosition}, Gap={gap}px, Rect=[{left},{top},{left + width},{top + height}], WorkArea={workArea}");
+        }
+
+        private static WindowsTaskbar.Position GetTaskbarPosition(System.Windows.Forms.Screen screen)
+        {
+            var bounds = screen.Bounds;
+            var workArea = screen.WorkingArea;
+
+            if (workArea.Top > bounds.Top)
+            {
+                return WindowsTaskbar.Position.Top;
+            }
+
+            if (workArea.Left > bounds.Left)
+            {
+                return WindowsTaskbar.Position.Left;
+            }
+
+            if (workArea.Right < bounds.Right)
+            {
+                return WindowsTaskbar.Position.Right;
+            }
+
+            if (workArea.Bottom < bounds.Bottom)
+            {
+                return WindowsTaskbar.Position.Bottom;
+            }
+
+            return WindowsTaskbar.Current.Location;
         }
 
         private static void ApplyTrayContextMenuAcrylic(Popup popup, DependencyObject themeTarget)

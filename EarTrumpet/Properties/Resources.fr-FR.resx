@@ -1600,7 +1600,7 @@ Détails : {0}</value>
     <value>Mode singe débloqué !</value>
   </data>
   <data name="MonkeyTickSoundUnlockedDescription" xml:space="preserve">
-    <value>Tu as trouvé le son secret du volume. Le cri du singe remplace maintenant le clic habituel.</value>
+    <value>Tu as trouvé les sons secrets du volume. Le singe change à mesure que le volume monte.</value>
   </data>
   <data name="SettingsUseMonkeyTickSound" xml:space="preserve">
     <value>Utiliser le son du singe à la place du clic</value>

@@ -7,6 +7,7 @@ namespace EarTrumpet.UI.Views
 {
     public partial class ChangelogWindow : Window
     {
+        private const string ChangelogUrl = "https://bettertrumpet.com/changelog";
         private readonly string _version;
 
         public ChangelogWindow()
@@ -22,13 +23,9 @@ namespace EarTrumpet.UI.Views
 
         private void ViewReleaseNotes_Click(object sender, RoutedEventArgs e)
         {
-            var releaseUrl = string.IsNullOrWhiteSpace(_version)
-                ? "https://github.com/xammen/BetterTrumpet/releases/latest"
-                : $"https://github.com/xammen/BetterTrumpet/releases/tag/v{_version}";
-
             Process.Start(new ProcessStartInfo
             {
-                FileName = releaseUrl,
+                FileName = ChangelogUrl,
                 UseShellExecute = true
             });
         }
