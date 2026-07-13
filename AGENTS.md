@@ -11,10 +11,9 @@ Update this file whenever a task adds a meaningful feature, fixes an important b
 ## Current Branch State
 
 - Branch: `master`
-- Local `master` is two commits ahead of `origin/master` (`e32a649a`): the media/audio polish commit and the 3.2.0 distribution-preparation commit. `migration/net8` and `origin/migration/net8` remain at the public 3.1.1 commit `13b8b884`; align deliberately before release.
-- Current HEAD is the local `chore: prepare 3.2.0 distribution metadata` commit. Public 3.1.1 hotfix commit: `13b8b884`.
-- Public tag: `v3.1.1` points at `13b8b884`
-- Current version line: `3.2.0` (prepared locally, not yet tagged or published). The x86 Release binary and release artifacts report `3.2.0`.
+- `master`, `origin/master`, `migration/net8`, and `origin/migration/net8` contain the released 3.2.0 source. A small post-release manifest/status commit may leave `master` ahead of tag `v3.2.0` without changing the shipped binary.
+- Public tag: `v3.2.0` points at the final release-artifact commit `3ab038c1`.
+- Current version line: `3.2.0` (released). The x86 Release binary and public release artifacts report `3.2.0`.
 - Target framework: `net8.0-windows10.0.19041.0`
 - Language: C# / WPF
 - Assembly name: `BetterTrumpet`
@@ -190,7 +189,16 @@ Recent work in `master` includes:
 - Winget PR is open: `https://github.com/microsoft/winget-pkgs/pull/390442`.
 - Microsoft Store package/submission is a separate Partner Center path; do not mix Store artifact versioning with GitHub/Choco/Winget without checking the Store manifest.
 
-3.2.0 is prepared locally but **not released yet**. The x86 Release build, setup executable, portable ZIP, Chocolatey package, Winget manifests, release notes, and checksum file are aligned to `3.2.0`. Tagging, pushing, GitHub publication, Chocolatey push, and Winget submission remain external release actions.
+3.2.0 was released on 2026-07-13:
+
+- GitHub Release: `https://github.com/xammen/BetterTrumpet/releases/tag/v3.2.0`
+- Tag `v3.2.0`: annotated tag on `3ab038c1`
+- `master` and `migration/net8` were pushed with the complete release source.
+- GitHub assets:
+  - `BetterTrumpet-3.2.0-setup.exe` SHA256 `A1040A2E8C3988DABED29E9050BBC76079537446B6228C9F51650D321DC75011`
+  - `BetterTrumpet-3.2.0-portable.zip` SHA256 `5BEA8FEAA70437286B7CA93E12F44236236B851699174443B93566BB46B6C9EE`
+- Chocolatey `bettertrumpet.3.2.0.nupkg` was pushed successfully and is awaiting automated checks/moderation.
+- Winget PR: `https://github.com/microsoft/winget-pkgs/pull/401693` (open, CLA passed, WinGetSvc checks running at submission time).
 
 If replacing same-version GitHub assets again, update hashes everywhere before or immediately after upload. Winget and Chocolatey verify the setup hash and will fail if the GitHub asset changes without their metadata changing.
 
