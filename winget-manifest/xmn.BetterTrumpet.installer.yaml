@@ -9,6 +9,6 @@ InstallerType: portable
 Installers:
   - Architecture: x86
     InstallerUrl: https://github.com/xammen/BetterTrumpet/releases/download/v3.2.0/BetterTrumpet-3.2.0-setup.exe
-    InstallerSha256: 88C8A75174C999708DA03F0140E21EE367D5F7BC2D9687C2A83F3ECE6432F236
+    InstallerSha256: A1040A2E8C3988DABED29E9050BBC76079537446B6228C9F51650D321DC75011
 ManifestType: installer
 ManifestVersion: 1.10.0
