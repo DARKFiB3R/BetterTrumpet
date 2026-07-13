@@ -2172,6 +2172,8 @@
                            Height="48"
                            Margin="0,0,16,0"
                            Source="/BetterTrumpet;component/Assets/icon.png"
+                           Cursor="Hand"
+                           MouseLeftButtonUp="AboutLogo_Click"
                            RenderOptions.BitmapScalingMode="NearestNeighbor" />
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock FontSize="24" FontWeight="SemiBold" Text="BetterTrumpet" />
@@ -2191,6 +2193,22 @@
                                Margin="0,8,0,0"
                                Text="{Binding CopyrightText}" />
                 </StackPanel>
+
+                <!-- Hidden easter egg, revealed after four quick clicks on the app logo. -->
+                <Border Margin="12,0,12,20"
+                        Style="{StaticResource SectionCardBorder}"
+                        Visibility="{Binding IsMonkeyTickSoundUnlocked, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock FontSize="15" FontWeight="SemiBold"
+                                   Text="{x:Static resx:Resources.MonkeyTickSoundUnlockedTitle}" />
+                        <TextBlock Margin="0,4,0,12" Style="{StaticResource BodySubText}"
+                                   TextWrapping="Wrap"
+                                   Text="{x:Static resx:Resources.MonkeyTickSoundUnlockedDescription}" />
+                        <CheckBox Content="{x:Static resx:Resources.SettingsUseMonkeyTickSound}"
+                                  IsChecked="{Binding UseMonkeyTickSound, Mode=TwoWay}"
+                                  ToolTip="{x:Static resx:Resources.SettingsUseMonkeyTickSoundTip}" />
+                    </StackPanel>
+                </Border>
 
                 <!-- Links -->
                 <StackPanel Margin="12,0,12,0">

@@ -1599,4 +1599,22 @@ Détails : {0}</value>
   <data name="SettingsMoreOptions" xml:space="preserve">
     <value>Plus d'options</value>
   </data>
+  <data name="SettingsVolumeTickSound" xml:space="preserve">
+    <value>Effet sonore lors du réglage du volume</value>
+  </data>
+  <data name="SettingsVolumeTickSoundTip" xml:space="preserve">
+    <value>Jouer un léger son de clic pendant le réglage du volume</value>
+  </data>
+  <data name="MonkeyTickSoundUnlockedTitle" xml:space="preserve">
+    <value>Mode singe débloqué !</value>
+  </data>
+  <data name="MonkeyTickSoundUnlockedDescription" xml:space="preserve">
+    <value>Tu as trouvé le son secret du volume. Le cri du singe remplace maintenant le clic habituel.</value>
+  </data>
+  <data name="SettingsUseMonkeyTickSound" xml:space="preserve">
+    <value>Utiliser le son du singe à la place du clic</value>
+  </data>
+  <data name="SettingsUseMonkeyTickSoundTip" xml:space="preserve">
+    <value>Conserver ce son secret pour les réglages du volume</value>
+  </data>
 </root>

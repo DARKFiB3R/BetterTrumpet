@@ -21,6 +21,18 @@ namespace EarTrumpet.UI.ViewModels
         public string DeveloperText => Properties.Resources.AboutDeveloper;
         public string ForkText => Properties.Resources.AboutFork;
 
+        public bool IsMonkeyTickSoundUnlocked => _settings.MonkeyTickSoundUnlocked;
+
+        public bool UseMonkeyTickSound
+        {
+            get => _settings.UseMonkeyTickSound;
+            set
+            {
+                _settings.UseMonkeyTickSound = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(UseMonkeyTickSound)));
+            }
+        }
+
         /// <summary>
         /// Copyright line with a dynamic year so it never goes stale.
         /// </summary>
@@ -183,6 +195,18 @@ namespace EarTrumpet.UI.ViewModels
         public void DownloadAndInstall()
         {
             _updateService?.DownloadAndInstallAsync();
+        }
+
+        public void UnlockMonkeyTickSound()
+        {
+            if (!_settings.MonkeyTickSoundUnlocked)
+            {
+                _settings.MonkeyTickSoundUnlocked = true;
+                _settings.UseVolumeTickSound = true;
+                _settings.UseMonkeyTickSound = true;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsMonkeyTickSoundUnlocked)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(UseMonkeyTickSound)));
+            }
         }
 
         /// <summary>

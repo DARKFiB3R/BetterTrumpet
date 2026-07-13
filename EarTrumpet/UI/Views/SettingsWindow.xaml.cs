@@ -17,6 +17,8 @@ namespace EarTrumpet.UI.Views
     {
         private ColorPickerPopup _colorPicker;
         private string _activeColorProperty;
+        private int _aboutLogoClickCount;
+        private DateTime _lastAboutLogoClick = DateTime.MinValue;
 
         public SettingsWindow()
         {
@@ -484,6 +486,28 @@ namespace EarTrumpet.UI.Views
             {
                 aboutVm.ExportSettingsCommand?.Execute(null);
             }
+            e.Handled = true;
+        }
+
+        private void AboutLogo_Click(object sender, MouseButtonEventArgs e)
+        {
+            var now = DateTime.UtcNow;
+            _aboutLogoClickCount = (now - _lastAboutLogoClick).TotalSeconds <= 2
+                ? _aboutLogoClickCount + 1
+                : 1;
+            _lastAboutLogoClick = now;
+
+            if (_aboutLogoClickCount >= 4)
+            {
+                var viewModel = DataContext as SettingsViewModel;
+                if (viewModel?.Selected?.Selected is EarTrumpetAboutPageViewModel aboutVm)
+                {
+                    aboutVm.UnlockMonkeyTickSound();
+                }
+
+                _aboutLogoClickCount = 0;
+            }
+
             e.Handled = true;
         }
 

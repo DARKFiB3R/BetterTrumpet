@@ -907,6 +907,18 @@ Open [https://eartrumpet.app/jmp/fixfonts] now?</value>
   <data name="SettingsVolumeTickSoundTip" xml:space="preserve">
     <value>Play a subtle tick sound when adjusting volume</value>
   </data>
+  <data name="MonkeyTickSoundUnlockedTitle" xml:space="preserve">
+    <value>Monkey mode unlocked!</value>
+  </data>
+  <data name="MonkeyTickSoundUnlockedDescription" xml:space="preserve">
+    <value>You found the secret volume sound. The monkey clip plays instead of the regular tick.</value>
+  </data>
+  <data name="SettingsUseMonkeyTickSound" xml:space="preserve">
+    <value>Use the monkey sound instead of the tick</value>
+  </data>
+  <data name="SettingsUseMonkeyTickSoundTip" xml:space="preserve">
+    <value>Keep this secret sound enabled for volume adjustments</value>
+  </data>
   <data name="AboutDeveloper" xml:space="preserve">
     <value>Developed by xammen</value>
   </data>

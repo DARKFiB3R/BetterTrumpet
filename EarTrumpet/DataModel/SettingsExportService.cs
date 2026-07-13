@@ -39,6 +39,9 @@ namespace EarTrumpet.DataModel
                 // Audio
                 ["UseLogarithmicVolume"] = settings.UseLogarithmicVolume,
                 ["UseSmoothVolumeAnimation"] = settings.UseSmoothVolumeAnimation,
+                ["UseVolumeTickSound"] = settings.UseVolumeTickSound,
+                ["MonkeyTickSoundUnlocked"] = settings.MonkeyTickSoundUnlocked,
+                ["UseMonkeyTickSound"] = settings.UseMonkeyTickSound,
                 ["VolumeAnimationSpeed"] = settings.VolumeAnimationSpeed,
                 ["PeakMeterFps"] = settings.PeakMeterFps,
                 ["PeakMeterStyle"] = (int)settings.PeakMeterStyle,
@@ -206,6 +209,9 @@ namespace EarTrumpet.DataModel
             // Audio
             TrySet(data, "UseLogarithmicVolume", (bool v) => settings.UseLogarithmicVolume = v);
             TrySet(data, "UseSmoothVolumeAnimation", (bool v) => settings.UseSmoothVolumeAnimation = v);
+            TrySet(data, "UseVolumeTickSound", (bool v) => settings.UseVolumeTickSound = v);
+            TrySet(data, "MonkeyTickSoundUnlocked", (bool v) => settings.MonkeyTickSoundUnlocked = v);
+            TrySet(data, "UseMonkeyTickSound", (bool v) => settings.UseMonkeyTickSound = v);
             TrySet(data, "VolumeAnimationSpeed", (double v) => settings.VolumeAnimationSpeed = v);
             TrySet(data, "PeakMeterFps", (int v) => settings.PeakMeterFps = v);
             TrySet(data, "PeakMeterStyle", (int v) => settings.PeakMeterStyle = (PeakMeterStyle)v);

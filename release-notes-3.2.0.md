@@ -11,6 +11,7 @@
 
 ### Audio controls
 
+- **Volume sound feedback** - The volume tick can be disabled from settings, is now fully localized, and is preserved by settings export and import.
 - **Persistent hard mute** - Apps can be marked to stay muted whenever their audio sessions appear, including after relaunch or reboot.
 - **Independent monitored inputs** - Distinct recording devices using Windows Listen to this device are no longer merged into one system-sounds row when Windows exposes separate session groups.
 - **Smoother app feedback** - Mute, solo-mute, hide, and app entrance animations have been refined.

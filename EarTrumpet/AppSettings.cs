@@ -995,6 +995,18 @@ namespace EarTrumpet
             set => _settings.Set("UseVolumeTickSound", value);
         }
 
+        public bool MonkeyTickSoundUnlocked
+        {
+            get => _settings.Get("MonkeyTickSoundUnlocked", false);
+            set => _settings.Set("MonkeyTickSoundUnlocked", value);
+        }
+
+        public bool UseMonkeyTickSound
+        {
+            get => MonkeyTickSoundUnlocked && _settings.Get("UseMonkeyTickSound", false);
+            set => _settings.Set("UseMonkeyTickSound", MonkeyTickSoundUnlocked && value);
+        }
+
         // Peak meter FPS: 20 (performance), 30 (balanced), or 60 (smooth). Default 30
         // Note: 30fps is a good balance between smoothness and CPU usage
         // Most users won't notice the difference from 60fps for peak meters

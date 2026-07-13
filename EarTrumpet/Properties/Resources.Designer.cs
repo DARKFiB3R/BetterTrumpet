@@ -2829,6 +2829,18 @@ namespace EarTrumpet.Properties {
         public static string SettingsVolumeTickSoundTip {
             get { return ResourceManager.GetString("SettingsVolumeTickSoundTip", resourceCulture); }
         }
+        public static string MonkeyTickSoundUnlockedTitle {
+            get { return ResourceManager.GetString("MonkeyTickSoundUnlockedTitle", resourceCulture); }
+        }
+        public static string MonkeyTickSoundUnlockedDescription {
+            get { return ResourceManager.GetString("MonkeyTickSoundUnlockedDescription", resourceCulture); }
+        }
+        public static string SettingsUseMonkeyTickSound {
+            get { return ResourceManager.GetString("SettingsUseMonkeyTickSound", resourceCulture); }
+        }
+        public static string SettingsUseMonkeyTickSoundTip {
+            get { return ResourceManager.GetString("SettingsUseMonkeyTickSoundTip", resourceCulture); }
+        }
         public static string CheckForUpdatesText {
             get { return ResourceManager.GetString("CheckForUpdatesText", resourceCulture); }
         }

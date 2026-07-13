@@ -97,6 +97,7 @@
     <Resource Include="Assets\Icon-Speaker-Light.ico" />
     <Resource Include="Assets\BetterTrumpet.ico" />
     <Resource Include="Assets\tick.wav" />
+    <Resource Include="Assets\monkey.mp3" />
     <Resource Include="Assets\Logo-Dark.png" />
     <Resource Include="Assets\Logo-Light.png" />
     <Resource Include="Assets\Icon-Dark.ico" />
