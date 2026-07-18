@@ -26,7 +26,6 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
             {
                 if (_level != value)
                 {
-                    Trace.WriteLine($"[BALTRACE] AudioDeviceChannel.Level SET idx={_index} old={_level} new={value} tid={Thread.CurrentThread.ManagedThreadId}");
                     Guid dummy = Guid.Empty;
                     _deviceVolume.SetChannelVolumeLevelScalar(_index, value, ref dummy);
 
@@ -44,10 +43,6 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
         internal bool ApplyNotifiedLevel(float newLevel)
         {
             var changed = Math.Abs(newLevel - _level) > 0.0001f;
-            if (changed)
-            {
-                Trace.WriteLine($"[BALTRACE] AudioDeviceChannel.OnNotify idx={_index} old={_level} new={newLevel} tid={Thread.CurrentThread.ManagedThreadId}");
-            }
             _level = newLevel;
             return changed;
         }

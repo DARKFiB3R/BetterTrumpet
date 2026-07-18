@@ -101,13 +101,9 @@ private readonly Action _returnFocusToTray;
         // flyout first deactivates it (closing it), then delivers the click — without this
         // guard that trailing click re-opens the flyout. Used to absorb that click.
         private DateTime _lastDeactivatedAt = DateTime.MinValue;
-        // Timestamp of the last transition into the Open state. Window activation can still
-        // be settling for a brief moment right after opening (layout/focus side effects of
-        // the device list content), which can produce a spurious deactivation that arrives
-        // just after the Opening-state guard below has already lapsed. Treating a very early
-        // deactivation the same as a real one incorrectly closes the flyout before the user
-        // ever interacted with it, making every subsequent click look like a fresh "open"
-        // instead of a "close" - since by then it's already hidden again.
+        // Timestamp of the last transition to Open. Guards against a spurious deactivation
+        // arriving within the window right after opening, which would immediately close the
+        // flyout that just opened.
         private DateTime _lastOpenedAt = DateTime.MinValue;
         private MouseHook _mh;
         private Rect _winRect;
@@ -542,8 +538,6 @@ private readonly Action _returnFocusToTray;
 
         public void OpenFlyout(InputType inputType)
         {
-            Trace.WriteLine($"[OpenFlyout] {DateTime.UtcNow:HH:mm:ss.fff} ENTER inputType={inputType} State={State} msSinceLastDeactivated={(DateTime.UtcNow - _lastDeactivatedAt).TotalMilliseconds:F0}");
-
             // A mouse click on the tray icon while the flyout is open deactivates it first
             // (light dismiss closes it), then this click is delivered. Without this guard the
             // click would re-open the just-closed flyout. If the click lands right after a
@@ -551,29 +545,22 @@ private readonly Action _returnFocusToTray;
             if (inputType == InputType.Mouse
                 && (DateTime.UtcNow - _lastDeactivatedAt) < TimeSpan.FromMilliseconds(300))
             {
-                Trace.WriteLine($"[OpenFlyout] {DateTime.UtcNow:HH:mm:ss.fff} ABSORBED by 300ms post-deactivation guard");
                 return;
             }
-
-            Trace.WriteLine($"[OpenFlyout] {DateTime.UtcNow:HH:mm:ss.fff} FALLTHROUGH to switch, State={State}");
 
             switch (State)
             {
                 case FlyoutViewState.Hidden:
-                    Trace.WriteLine($"[OpenFlyout] {DateTime.UtcNow:HH:mm:ss.fff} -> BeginOpen (Hidden)");
                     BeginOpen(inputType);
                     break;
                 case FlyoutViewState.Open:
-                    Trace.WriteLine($"[OpenFlyout] {DateTime.UtcNow:HH:mm:ss.fff} -> BeginClose (Open)");
                     BeginClose(inputType);
                     break;
                 case FlyoutViewState.Closing_Stage1:
-                    Trace.WriteLine($"[OpenFlyout] {DateTime.UtcNow:HH:mm:ss.fff} -> _openAfterClose=true (Closing_Stage1) <-- THIS CAUSES THE REOPEN");
                     _openAfterClose = true;
                     _openAfterCloseInput = inputType;
                     break;
                 case FlyoutViewState.Closing_Stage2:
-                    Trace.WriteLine($"[OpenFlyout] {DateTime.UtcNow:HH:mm:ss.fff} -> _openAfterClose=true (Closing_Stage2) <-- THIS CAUSES THE REOPEN");
                     _openAfterClose = true;
                     _openAfterCloseInput = inputType;
                     _deBounceTimer.Stop();
@@ -584,26 +571,18 @@ private readonly Action _returnFocusToTray;
 
         public void OnDeactivated(object sender, EventArgs e)
         {
-            Trace.WriteLine($"[OnDeactivated] {DateTime.UtcNow:HH:mm:ss.fff} ENTER State={State} IsPinned={IsPinned} msSinceOpened={(DateTime.UtcNow - _lastOpenedAt).TotalMilliseconds:F0}");
             if (State == FlyoutViewState.Opening)
             {
-                Trace.WriteLine($"[OnDeactivated] {DateTime.UtcNow:HH:mm:ss.fff} IGNORED - still Opening");
                 return;
             }
             if (IsPinned)
             {
-                Trace.WriteLine($"[OnDeactivated] {DateTime.UtcNow:HH:mm:ss.fff} IGNORED - pinned");
                 return;
             }
             if ((DateTime.UtcNow - _lastOpenedAt) < TimeSpan.FromMilliseconds(200))
             {
-                // Activation can still be settling immediately after opening (layout/focus
-                // side effects of the device list content). A deactivation this soon after
-                // opening isn't a real dismiss - ignore it rather than closing on it.
-                Trace.WriteLine($"[OnDeactivated] {DateTime.UtcNow:HH:mm:ss.fff} IGNORED - within 200ms settling window");
                 return;
             }
-            Trace.WriteLine($"[OnDeactivated] {DateTime.UtcNow:HH:mm:ss.fff} -> BeginClose (real deactivation)");
             _lastDeactivatedAt = DateTime.UtcNow;
             BeginClose(InputType.Command);
         }

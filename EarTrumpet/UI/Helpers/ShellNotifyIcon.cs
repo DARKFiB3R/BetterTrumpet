@@ -222,16 +222,10 @@ namespace EarTrumpet.UI.Helpers
                     // Observed double WM_CALLBACKMOUSEMSG/WM_LBUTTONUP pairs on Windows 11 22533
                     // Could be a result of XAML island use in Taskbar. Or a bug elsewhere.
                     // For now, swallow the duplicate to improve flyout UX.
-                    System.Diagnostics.Trace.WriteLine($"[TrayClick] {DateTime.UtcNow:HH:mm:ss.fff} raw message={(short)msg.LParam} HasAlreadyProcessedButtonUp(before-read)={_hasAlreadyProcessedButtonUp} cursorWithinBounds={IsCursorWithinNotifyIconBounds()} cursorPos={System.Windows.Forms.Cursor.Position} iconBounds={_iconLocation.Left},{_iconLocation.Top},{_iconLocation.Right},{_iconLocation.Bottom}");
                     if (!HasAlreadyProcessedButtonUp)
                     {
                         HasAlreadyProcessedButtonUp = true;
-                        System.Diagnostics.Trace.WriteLine($"[TrayClick] {DateTime.UtcNow:HH:mm:ss.fff} -> INVOKING PrimaryInvoke");
                         PrimaryInvoke?.Invoke(this, InputType.Mouse);
-                    }
-                    else
-                    {
-                        System.Diagnostics.Trace.WriteLine($"[TrayClick] {DateTime.UtcNow:HH:mm:ss.fff} -> SWALLOWED as duplicate");
                     }
                     break;
                 case (short)Shell32.NotifyIconNotification.NIN_KEYSELECT:

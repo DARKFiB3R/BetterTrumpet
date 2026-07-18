@@ -44,8 +44,6 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
                 }
             }
 
-            Trace.WriteLine($"[BALTRACE] AudioDeviceChannelCollection.OnNotify nChannels={data.nChannels} anyChanged={anyChannelChanged} vals=[{string.Join(",", channelVolumesValues)}] tid={Thread.CurrentThread.ManagedThreadId}");
-
             // Apply every channel's new value before raising any PropertyChanged,
             // so a listener reacting to one channel's change (e.g. balance
             // self-correction) always sees every other channel's new value too,
