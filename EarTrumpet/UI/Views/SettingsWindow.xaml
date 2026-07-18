@@ -1475,6 +1475,19 @@
                                     </StackPanel>
                                 </Grid>
 
+                                <!-- Apply text color globally toggle -->
+                                <Grid Margin="0,0,0,16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" VerticalAlignment="Center" TextWrapping="Wrap"
+                                               Text="Apply text color to menus and windows"
+                                               Style="{StaticResource BodySubText}" FontSize="12" />
+                                    <CheckBox Grid.Column="1" VerticalAlignment="Center"
+                                              IsChecked="{Binding ApplyThemeTextColor, Mode=TwoWay}" />
+                                </Grid>
+
                                 <!-- Reset Button -->
                                 <Border Height="36" HorizontalAlignment="Left" CornerRadius="6" Cursor="Hand"
                                         Background="{StaticResource PanelBackgroundBrush}" 
