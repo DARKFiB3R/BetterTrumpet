@@ -1,0 +1,37 @@
+diff --git a/EarTrumpet/UI/Controls/BalanceSlider.cs b/EarTrumpet/UI/Controls/BalanceSlider.cs
+index 3ad2538..d4a8374 100644
+--- a/EarTrumpet/UI/Controls/BalanceSlider.cs
++++ b/EarTrumpet/UI/Controls/BalanceSlider.cs
+@@ -50,6 +50,14 @@ namespace EarTrumpet.UI.Controls
+ 
+             ApplyCustomColors();
+ 
++            // The generic Theme:Brush system (used for the default, non-custom accent
++            // color) also writes a local value to Foreground on this same Loaded event,
++            // and can fire after us depending on handler order - silently overwriting
++            // our custom color right after we set it. Re-applying once more, deferred
++            // to the same priority VolumeSlider uses for this exact reason, guarantees
++            // we go last and actually stick.
++            Dispatcher.BeginInvoke(new Action(ApplyCustomColors), System.Windows.Threading.DispatcherPriority.Loaded);
++
+             if (App.Settings != null)
+             {
+                 App.Settings.CustomSliderColorsChanged += OnCustomSliderColorsChanged;
+@@ -68,10 +76,16 @@ namespace EarTrumpet.UI.Controls
+         {
+             if (!Dispatcher.CheckAccess())
+             {
+-                Dispatcher.BeginInvoke(new Action(ApplyCustomColors));
++                Dispatcher.BeginInvoke(new Action(OnCustomSliderColorsChanged));
+                 return;
+             }
++
+             ApplyCustomColors();
++
++            // Same race as in OnLoaded: the generic Theme:Brush system also reacts to
++            // a theme change and can overwrite our color right after we set it if it
++            // runs second. Going again, deferred, guarantees we're the one that sticks.
++            Dispatcher.BeginInvoke(new Action(ApplyCustomColors), System.Windows.Threading.DispatcherPriority.Loaded);
+         }
+ 
+         // Mirrors VolumeSlider.ApplyCustomColors so the balance slider stays visually

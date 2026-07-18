@@ -81,16 +81,26 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
         void IAudioEndpointVolumeCallback.OnNotify(IntPtr pNotify)
         {
             var data = Marshal.PtrToStructure<AUDIO_VOLUME_NOTIFICATION_DATA>(pNotify);
-            _volume = data.fMasterVolume;
-            _isMuted = data.bMuted != 0;
 
-            _channels.OnNotify(pNotify, data);
+            // Every notification carries a full state snapshot, including a
+            // master-volume field, regardless of what actually changed. If the
+            // channel values in this notification differ from what we already had,
+            // this notification is reporting a channel-only change (e.g. from the
+            // balance control) - so its master-volume field isn't a genuine change
+            // and shouldn't overwrite what we already know Volume/IsMuted to be.
+            var isChannelOnlyChange = _channels.OnNotify(pNotify, data);
 
-            _dispatcher.Invoke((Action)(() =>
+            if (!isChannelOnlyChange)
             {
-                RaisePropertyChanged(nameof(Volume));
-                RaisePropertyChanged(nameof(IsMuted));
-            }));
+                _volume = data.fMasterVolume;
+                _isMuted = data.bMuted != 0;
+
+                _dispatcher.Invoke((Action)(() =>
+                {
+                    RaisePropertyChanged(nameof(Volume));
+                    RaisePropertyChanged(nameof(IsMuted));
+                }));
+            }
         }
 
         public float Volume
@@ -122,6 +132,7 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
                     }
 
                     IsMuted = App.Settings.UseLogarithmicVolume ? _volume <= (1 / 100f).ToLogVolume() : _volume.ToVolumeInt() == 0;
+                    RaisePropertyChanged(nameof(Volume));
                 }
             }
         }

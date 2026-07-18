@@ -1965,6 +1965,24 @@ namespace EarTrumpet.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Left/right balance.
+        /// </summary>
+        public static string BalanceToolTip {
+            get {
+                return ResourceManager.GetString("BalanceToolTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reset to center.
+        /// </summary>
+        public static string BalanceResetToolTip {
+            get {
+                return ResourceManager.GetString("BalanceResetToolTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Off.
         /// </summary>
         public static string ToggleSwitchOffText {

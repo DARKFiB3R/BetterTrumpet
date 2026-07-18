@@ -981,6 +981,27 @@ namespace EarTrumpet
             set => _settings.Set("UseSmoothVolumeAnimation", value);
         }
 
+        // Per-device L/R balance, in the range -100 (full left) to +100 (full right). 0 = centered.
+        // Stored per device Id so each output/input device remembers its own balance across
+        // default-device switches and app restarts.
+        public double GetBalanceForDevice(string deviceId)
+        {
+            if (string.IsNullOrEmpty(deviceId))
+            {
+                return 0;
+            }
+            return _settings.Get($"Balance_{deviceId}", 0.0);
+        }
+
+        public void SetBalanceForDevice(string deviceId, double balance)
+        {
+            if (string.IsNullOrEmpty(deviceId))
+            {
+                return;
+            }
+            _settings.Set($"Balance_{deviceId}", balance);
+        }
+
         // Volume animation speed: 0.02 (very slow) to 0.5 (fast). Default 0.08
         public double VolumeAnimationSpeed
         {

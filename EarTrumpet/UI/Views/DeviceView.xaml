@@ -30,6 +30,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <Border Height="{DynamicResource Mutable_DeviceTitleCellHeight}" Margin="{StaticResource WindowMargin}">
@@ -122,6 +123,57 @@
                         <TextBlock Grid.Column="2"
                                    Style="{StaticResource DeviceVolumeTextStyle}"
                                    Text="{Binding Device.Volume, Mode=OneWay}" />
+                    </Grid>
+
+                    <Grid Grid.Row="2" Height="{DynamicResource Mutable_DeviceItemCellHeight}">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Device.IsBalanceSupported}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{DynamicResource Mutable_IconCellWidth}" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="{DynamicResource Mutable_VolumeCellWidth}" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="L/R"
+                                   FontSize="18"
+                                   Cursor="Hand"
+                                   MouseLeftButtonUp="BalanceLabel_MouseLeftButtonUp"
+                                   ToolTipService.ToolTip="{x:Static resx:Resources.BalanceResetToolTip}"
+                                   AutomationProperties.Name="{x:Static resx:Resources.BalanceResetToolTip}">
+                            <TextBlock.Style>
+                                <Style BasedOn="{StaticResource DeviceVolumeTextStyle}" TargetType="TextBlock">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Opacity" Value="0.7" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <ctl:BalanceSlider x:Name="BalanceSlider"
+                                Grid.Column="1"
+                                Minimum="-100"
+                                Maximum="100"
+                                IsSnapToTickEnabled="False"
+                                SmallChange="1"
+                                LargeChange="10"
+                                Value="{Binding Device.Balance, Mode=TwoWay}"
+                                AutomationProperties.Name="{x:Static resx:Resources.BalanceToolTip}"
+                                ToolTipService.ToolTip="{x:Static resx:Resources.BalanceToolTip}" />
+
+                        <TextBlock Grid.Column="2"
+                                   Style="{StaticResource DeviceVolumeTextStyle}"
+                                   Text="{Binding Device.Balance, Mode=OneWay, StringFormat={}{0:0}}" />
                     </Grid>
                 </Grid>
             </Border>

@@ -1,0 +1,13 @@
+diff --git a/EarTrumpet/UI/Helpers/ShellNotifyIcon.cs b/EarTrumpet/UI/Helpers/ShellNotifyIcon.cs
+index 0dc2492..48b3a62 100644
+--- a/EarTrumpet/UI/Helpers/ShellNotifyIcon.cs
++++ b/EarTrumpet/UI/Helpers/ShellNotifyIcon.cs
+@@ -219,7 +219,7 @@ namespace EarTrumpet.UI.Helpers
+                     // Observed double WM_CALLBACKMOUSEMSG/WM_LBUTTONUP pairs on Windows 11 22533
+                     // Could be a result of XAML island use in Taskbar. Or a bug elsewhere.
+                     // For now, swallow the duplicate to improve flyout UX.
+-                    System.Diagnostics.Trace.WriteLine($"[TrayClick] {DateTime.UtcNow:HH:mm:ss.fff} raw message={(short)msg.LParam} HasAlreadyProcessedButtonUp(before-read)={_hasAlreadyProcessedButtonUp}");
++                    System.Diagnostics.Trace.WriteLine($"[TrayClick] {DateTime.UtcNow:HH:mm:ss.fff} raw message={(short)msg.LParam} HasAlreadyProcessedButtonUp(before-read)={_hasAlreadyProcessedButtonUp} cursorWithinBounds={IsCursorWithinNotifyIconBounds()} cursorPos={System.Windows.Forms.Cursor.Position} iconBounds={_iconLocation.Left},{_iconLocation.Top},{_iconLocation.Right},{_iconLocation.Bottom}");
+                     if (!HasAlreadyProcessedButtonUp)
+                     {
+                         HasAlreadyProcessedButtonUp = true;

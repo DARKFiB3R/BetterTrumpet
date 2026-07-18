@@ -95,6 +95,11 @@ namespace EarTrumpet.UI.Views
             }
         }
 
+        private void BalanceLabel_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            Device?.ResetBalance.Execute(null);
+        }
+
         private void OpenPopup()
         {
             var viewModel = Window.GetWindow(DeviceListItem).DataContext as IPopupHostViewModel;
