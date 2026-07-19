@@ -715,7 +715,7 @@
                                            Foreground="White" />
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="Apply Text Color" FontSize="15" FontWeight="SemiBold" />
+                                <TextBlock Text="Custom Text Colour" FontSize="15" FontWeight="SemiBold" />
                                 <TextBlock Text="Also apply theme to menu text"
                                            Style="{StaticResource BodySubText}" FontSize="12" TextWrapping="Wrap" />
                             </StackPanel>
