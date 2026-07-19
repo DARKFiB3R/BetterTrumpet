@@ -172,6 +172,16 @@ namespace EarTrumpet.UI.Controls
                 return;
             }
 
+            // Same treatment as VolumeSlider's _sliderLeft: dim the fill for non-Classic
+            // styles so the peak meter pattern pops against a darker background. Without
+            // this, Fill always renders at full opacity while VolumeSlider's equivalent
+            // sits at 0.4, making the balance slider's fill look noticeably brighter than
+            // every other slider whenever a non-Classic style is selected.
+            if (_fill != null)
+            {
+                _fill.Opacity = App.Settings.PeakMeterStyle == PeakMeterStyle.Classic ? 1.0 : 0.4;
+            }
+
             double height;
             CornerRadius cornerRadius;
             double opacity;

@@ -55,7 +55,7 @@ namespace EarTrumpet.UI.ViewModels
             }
         }
 
-        // Shown next to "Live Preview" - e.g. "— OLED Pure" - so it's clear which theme
+        // Shown next to "Live Preview" - e.g. "- OLED Pure" - so it's clear which theme
         // is currently active. Empty when nothing's selected (Custom tab, Randomize, etc).
         public string LivePreviewSubtitle => _selectedTheme != null ? $"- {_selectedTheme.Name}" : "";
 

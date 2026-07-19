@@ -1216,10 +1216,17 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Border Margin="3" Padding="12" CornerRadius="8" Cursor="Hand"
-                                                MouseLeftButtonDown="ThemeCard_Click" Tag="{Binding}"
-                                                Background="#10FFFFFF" BorderThickness="1.5" BorderBrush="#18FFFFFF">
+                                                MouseLeftButtonDown="ThemeCard_Click" Tag="{Binding}">
                                             <Border.Style>
                                                 <Style TargetType="Border">
+                                                    <!-- Set as Style Setters, not local attributes on the element -
+                                                         a local value always wins over a Style Trigger for the same
+                                                         property no matter how the trigger evaluates, which is why
+                                                         the IsSelected highlight never showed even though the
+                                                         underlying binding was firing correctly the whole time. -->
+                                                    <Setter Property="Background" Value="#10FFFFFF" />
+                                                    <Setter Property="BorderThickness" Value="1.5" />
+                                                    <Setter Property="BorderBrush" Value="#18FFFFFF" />
                                                     <Style.Triggers>
                                                         <Trigger Property="IsMouseOver" Value="True">
                                                             <Setter Property="Background" Value="#1AFFFFFF" />
