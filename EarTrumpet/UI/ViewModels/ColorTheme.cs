@@ -1,9 +1,12 @@
+using System.ComponentModel;
 using System.Windows.Media;
 
 namespace EarTrumpet.UI.ViewModels
 {
-    public class ColorTheme
+    public class ColorTheme : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+
         // Original 4 slider colors
         public string Name { get; set; }
         public string Category { get; set; }
@@ -19,6 +22,22 @@ namespace EarTrumpet.UI.ViewModels
 
         // Is this a user-created custom theme?
         public bool IsCustom { get; set; }
+
+        // Is this the currently active theme? Set by the settings page ViewModel
+        // whenever selection changes - drives the highlighted border on its card.
+        private bool _isSelected;
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (_isSelected != value)
+                {
+                    _isSelected = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
+                }
+            }
+        }
 
         /// <summary>
         /// Legacy constructor (4 colors, no category)

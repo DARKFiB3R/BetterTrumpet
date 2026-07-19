@@ -191,6 +191,26 @@ namespace EarTrumpet.UI.ViewModels
             ? 0f
             : Math.Max(_balanceChannels[0].Level, _balanceChannels[1].Level);
 
+        // Relative to the louder channel (always 1.0 there), how much Balance is
+        // attenuating the *other* channel right now - e.g. at hard-right balance,
+        // GainRatioLeft is near 0 and GainRatioRight is 1.
+        //
+        // Exists because the device's real-time peak meter (Device.PeakValue1/2) does
+        // not reliably reflect this attenuation on every driver - on some drivers it
+        // appears to tap the signal upstream of the per-channel volume scalar Balance
+        // actually sets, so both channels can read as nearly equal on the meter even
+        // when the balance-driven channel gain is genuinely skewed and the audible
+        // output is skewed to match. BalanceSlider multiplies the raw meter reading by
+        // these ratios so its peak display matches the balance that's actually being
+        // applied, rather than trusting a meter reading that may not reflect it.
+        public double BalanceGainRatioLeft => _balanceChannels == null || CurrentVolumeScalar <= 0.0001f
+            ? 1.0
+            : _balanceChannels[0].Level / CurrentVolumeScalar;
+
+        public double BalanceGainRatioRight => _balanceChannels == null || CurrentVolumeScalar <= 0.0001f
+            ? 1.0
+            : _balanceChannels[1].Level / CurrentVolumeScalar;
+
         private void ApplyChannels(double balance, float volume)
         {
             float left, right;
@@ -218,6 +238,8 @@ namespace EarTrumpet.UI.ViewModels
             }
 
             RaisePropertyChanged(nameof(Balance));
+            RaisePropertyChanged(nameof(BalanceGainRatioLeft));
+            RaisePropertyChanged(nameof(BalanceGainRatioRight));
         }
 
         private void ApplyPersistedBalance()
@@ -253,6 +275,8 @@ namespace EarTrumpet.UI.ViewModels
             }
 
             RaisePropertyChanged(nameof(Balance));
+            RaisePropertyChanged(nameof(BalanceGainRatioLeft));
+            RaisePropertyChanged(nameof(BalanceGainRatioRight));
         }
 
         private void OnPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)

@@ -146,6 +146,7 @@
                         <TextBlock Grid.Column="0"
                                    Text="L/R"
                                    FontSize="18"
+                                   FontWeight="Bold"
                                    Cursor="Hand"
                                    MouseLeftButtonUp="BalanceLabel_MouseLeftButtonUp"
                                    ToolTipService.ToolTip="{x:Static resx:Resources.BalanceResetToolTip}"
@@ -169,6 +170,10 @@
                                 SmallChange="1"
                                 LargeChange="10"
                                 Value="{Binding Device.Balance, Mode=TwoWay}"
+                                PeakValue1="{Binding Device.PeakValue1}"
+                                PeakValue2="{Binding Device.PeakValue2}"
+                                GainRatioLeft="{Binding Device.BalanceGainRatioLeft}"
+                                GainRatioRight="{Binding Device.BalanceGainRatioRight}"
                                 AutomationProperties.Name="{x:Static resx:Resources.BalanceToolTip}"
                                 ToolTipService.ToolTip="{x:Static resx:Resources.BalanceToolTip}" />
 

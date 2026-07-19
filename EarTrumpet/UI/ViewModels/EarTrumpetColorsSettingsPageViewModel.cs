@@ -49,7 +49,28 @@ namespace EarTrumpet.UI.ViewModels
                     ApplyTheme(value);
                     _settings.ActiveThemeName = value.Name;
                     RaisePropertyChanged(nameof(SelectedTheme));
+                    RaisePropertyChanged(nameof(LivePreviewSubtitle));
+                    UpdateThemeSelectionFlags();
                 }
+            }
+        }
+
+        // Shown next to "Live Preview" - e.g. "— OLED Pure" - so it's clear which theme
+        // is currently active. Empty when nothing's selected (Custom tab, Randomize, etc).
+        public string LivePreviewSubtitle => _selectedTheme != null ? $"- {_selectedTheme.Name}" : "";
+
+        // Keeps each ColorTheme's own IsSelected flag in sync with _selectedTheme, so the
+        // Presets grid can highlight the active card via a plain per-item binding instead
+        // of a cross-tree comparison back to this ViewModel.
+        private void UpdateThemeSelectionFlags()
+        {
+            foreach (var theme in AvailableThemes)
+            {
+                theme.IsSelected = theme == _selectedTheme;
+            }
+            foreach (var theme in CustomThemes)
+            {
+                theme.IsSelected = theme == _selectedTheme;
             }
         }
 
@@ -601,6 +622,7 @@ namespace EarTrumpet.UI.ViewModels
             {
                 _selectedTheme = AvailableThemes.FirstOrDefault(t => t.Name == activeThemeName)
                               ?? CustomThemes.FirstOrDefault(t => t.Name == activeThemeName);
+                UpdateThemeSelectionFlags();
             }
 
             // Commands
@@ -823,6 +845,8 @@ namespace EarTrumpet.UI.ViewModels
             _selectedTheme = null; // Clear selection so any card gets deselected
             _settings.ActiveThemeName = "";
             RaisePropertyChanged(nameof(SelectedTheme));
+            RaisePropertyChanged(nameof(LivePreviewSubtitle));
+            UpdateThemeSelectionFlags();
             ApplyTheme(theme);
         }
 
@@ -848,6 +872,8 @@ namespace EarTrumpet.UI.ViewModels
             RestoreOriginalThemeRefs();
 
             RaisePropertyChanged(nameof(SelectedTheme));
+            RaisePropertyChanged(nameof(LivePreviewSubtitle));
+            UpdateThemeSelectionFlags();
         }
 
         /// <summary>
@@ -948,6 +974,31 @@ namespace EarTrumpet.UI.ViewModels
                         acrylicFallbackRef.Value = bgHex;
                         acrylicFallbackRef.Rules.Clear();
                     }
+
+                    // Override AcrylicBackground - the settings window's left nav pane
+                    // (Grid.Column 0) uses this ref directly for its normal resting-state
+                    // background. Without this override it stays on the theme's own
+                    // un-tinted default, which is what shows through as a plain grey flash
+                    // during a live resize (the real acrylic backdrop briefly suppresses
+                    // and this Border becomes momentarily visible) and disappears again
+                    // once the window settles.
+                    var acrylicBackgroundRef = refs.FirstOrDefault(r => r.Key == "AcrylicBackground");
+                    if (acrylicBackgroundRef != null)
+                    {
+                        acrylicBackgroundRef.Value = bgHex;
+                        acrylicBackgroundRef.Rules.Clear();
+                    }
+
+                    // Override AcrylicColor_Settings - the settings window's actual DWM
+                    // backdrop brush (Theme:AcrylicBrush.Background on the window root),
+                    // a separate system from the WPF Border layers above. Same "/opacity"
+                    // tint format as AcrylicColor_Flyout.
+                    var acrylicSettingsRef = refs.FirstOrDefault(r => r.Key == "AcrylicColor_Settings");
+                    if (acrylicSettingsRef != null)
+                    {
+                        acrylicSettingsRef.Value = $"{bgHex}/{FlyoutAcrylicTintOpacity}";
+                        acrylicSettingsRef.Rules.Clear();
+                    }
                 }
 
                 // Fire theme change to repaint all UI elements
@@ -966,7 +1017,7 @@ namespace EarTrumpet.UI.ViewModels
         {
             if (_refsBackedUp) return;
 
-            var keysToBackup = new[] { "Text", "GrayText", "Background", "FlyoutBackground", "PopupBackground", "AcrylicColor_Flyout", "AcrylicBackgroundFallback" };
+            var keysToBackup = new[] { "Text", "GrayText", "Background", "FlyoutBackground", "PopupBackground", "AcrylicColor_Flyout", "AcrylicBackgroundFallback", "AcrylicColor_Settings", "AcrylicBackground" };
             foreach (var key in keysToBackup)
             {
                 var r = Manager.Current.References.FirstOrDefault(x => x.Key == key);
@@ -1075,6 +1126,8 @@ namespace EarTrumpet.UI.ViewModels
                 _selectedTheme = null;
                 _settings.ActiveThemeName = "";
                 RaisePropertyChanged(nameof(SelectedTheme));
+                RaisePropertyChanged(nameof(LivePreviewSubtitle));
+                UpdateThemeSelectionFlags();
             }
         }
 

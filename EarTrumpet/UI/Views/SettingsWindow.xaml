@@ -697,6 +697,34 @@
                     </Border>
 
                     <!-- ═══════════════════════════════════════════════════ -->
+                    <!-- Apply text color globally (menus/windows, not just sliders) -->
+                    <!-- Always visible regardless of Dynamic/Presets/Custom tab,   -->
+                    <!-- since TextColor is set by all three paths.                 -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <Border Margin="0,0,0,16" Padding="16,12" CornerRadius="10"
+                            Theme:Brush.Background="Theme={Theme}ListLow, HighContrast=Window">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Style="{StaticResource SectionIconBorder}">
+                                <TextBlock Text="&#xE8D2;" FontFamily="Segoe MDL2 Assets" FontSize="18"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Foreground="White" />
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="Apply Text Color" FontSize="15" FontWeight="SemiBold" />
+                                <TextBlock Text="Also apply theme to menu text"
+                                           Style="{StaticResource BodySubText}" FontSize="12" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <CheckBox Grid.Column="2" VerticalAlignment="Center"
+                                      IsChecked="{Binding ApplyThemeTextColor, Mode=TwoWay}" />
+                        </Grid>
+                    </Border>
+
+                    <!-- ═══════════════════════════════════════════════════ -->
                     <!-- SEGMENTED TAB BAR: [Dynamic] [Presets] [Custom]     -->
                     <!-- ═══════════════════════════════════════════════════ -->
                     <Border Margin="0,0,0,16" CornerRadius="8" Padding="3"
@@ -789,9 +817,14 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="{x:Static resx:Resources.SettingsLivePreview}" FontSize="13" FontWeight="SemiBold"
-                                           VerticalAlignment="Center"
-                                           Theme:Brush.Foreground="Theme=Text, HighContrast=Text" />
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Static resx:Resources.SettingsLivePreview}" FontSize="13" FontWeight="SemiBold"
+                                               VerticalAlignment="Center"
+                                               Theme:Brush.Foreground="Theme=Text, HighContrast=Text" />
+                                    <TextBlock Text="{Binding LivePreviewSubtitle}" FontSize="13" FontWeight="SemiBold" Margin="6,0,0,0"
+                                               VerticalAlignment="Center"
+                                               Theme:Brush.Foreground="Theme=Text, HighContrast=Text" />
+                                </StackPanel>
                                 <!-- Randomize button -->
                                 <Border Grid.Column="1" Width="32" Height="32" CornerRadius="8" Cursor="Hand"
                                         AutomationProperties.Name="{x:Static resx:Resources.SettingsRandomizeTooltip}"
@@ -1192,6 +1225,10 @@
                                                             <Setter Property="Background" Value="#1AFFFFFF" />
                                                             <Setter Property="BorderBrush" Value="#35FFFFFF" />
                                                         </Trigger>
+                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                            <Setter Property="BorderBrush" Value="{StaticResource BrandAccentBrush}" />
+                                                            <Setter Property="BorderThickness" Value="2" />
+                                                        </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </Border.Style>
@@ -1473,19 +1510,6 @@
                                         <TextBlock Text="{x:Static resx:Resources.ColorLabelGlow}" FontSize="11" Margin="0,6,0,0" FontWeight="Medium"
                                                    HorizontalAlignment="Center" Style="{StaticResource BodySubText}" />
                                     </StackPanel>
-                                </Grid>
-
-                                <!-- Apply text color globally toggle -->
-                                <Grid Margin="0,0,0,16">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" VerticalAlignment="Center" TextWrapping="Wrap"
-                                               Text="Apply text color to menus and windows"
-                                               Style="{StaticResource BodySubText}" FontSize="12" />
-                                    <CheckBox Grid.Column="1" VerticalAlignment="Center"
-                                              IsChecked="{Binding ApplyThemeTextColor, Mode=TwoWay}" />
                                 </Grid>
 
                                 <!-- Reset Button -->
@@ -3220,7 +3244,7 @@
                                           b:ScrollViewerEx.ScrollToTopOnChanged="{Binding Selected.Selected}"
                                           HorizontalScrollBarVisibility="Disabled"
                                           VerticalScrollBarVisibility="Auto">
-                                <ContentControl Margin="12,0,0,0"
+                                <ContentControl Margin="12,0,10,0"
                                                 Content="{Binding Selected.Selected}"
                                                 FocusVisualStyle="{x:Null}"
                                                 Focusable="False"

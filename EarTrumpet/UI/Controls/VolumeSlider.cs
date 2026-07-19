@@ -280,7 +280,7 @@ namespace EarTrumpet.UI.Controls
                 case PeakMeterStyle.Dotted:
                     // Dotted: small squares with tiny gaps, punchy and visible
                     _peakMeter1.Height = 3;
-                    _peakMeter1.Margin = new Thickness(0, -2, 0, 0);
+                    _peakMeter1.Margin = new Thickness(0);
                     _peakMeter1.CornerRadius = new CornerRadius(0);
                     _peakMeter1.Opacity = 0.7;
                     _peakMeter1.Visibility = Visibility.Visible;
@@ -291,7 +291,7 @@ namespace EarTrumpet.UI.Controls
                 case PeakMeterStyle.Blocks:
                     // Blocks: wide chunky segments, LED meter style
                     _peakMeter1.Height = 4;
-                    _peakMeter1.Margin = new Thickness(0, -2, 0, 0);
+                    _peakMeter1.Margin = new Thickness(0);
                     _peakMeter1.CornerRadius = new CornerRadius(0);
                     _peakMeter1.Opacity = 0.7;
                     _peakMeter1.Visibility = Visibility.Visible;
@@ -302,7 +302,7 @@ namespace EarTrumpet.UI.Controls
                 case PeakMeterStyle.Bars:
                     // Line: single clean thin bar, no pattern
                     _peakMeter1.Height = 2;
-                    _peakMeter1.Margin = new Thickness(0, -1, 0, 0);
+                    _peakMeter1.Margin = new Thickness(0);
                     _peakMeter1.CornerRadius = new CornerRadius(1);
                     _peakMeter1.Opacity = 0.55;
                     _peakMeter1.Visibility = Visibility.Visible;
@@ -313,7 +313,7 @@ namespace EarTrumpet.UI.Controls
                 case PeakMeterStyle.Wave:
                     // Dashes: wide spaced dashes, retro feel
                     _peakMeter1.Height = 3;
-                    _peakMeter1.Margin = new Thickness(0, -2, 0, 0);
+                    _peakMeter1.Margin = new Thickness(0);
                     _peakMeter1.CornerRadius = new CornerRadius(1);
                     _peakMeter1.Opacity = 0.65;
                     _peakMeter1.Visibility = Visibility.Visible;
@@ -327,7 +327,7 @@ namespace EarTrumpet.UI.Controls
         /// Creates a horizontal repeating pattern brush for dotted/dashed effects.
         /// Uses a DrawingBrush tiled horizontally to create segment gaps.
         /// </summary>
-        private static Brush CreateDottedBrush(double segmentWidth, double gapWidth)
+        internal static Brush CreateDottedBrush(double segmentWidth, double gapWidth)
         {
             var totalWidth = segmentWidth + gapWidth;
             var drawing = new GeometryDrawing
