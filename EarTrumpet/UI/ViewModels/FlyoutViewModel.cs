@@ -129,6 +129,7 @@ private readonly Action _returnFocusToTray;
             _mainViewModel.VisibleDevices.CollectionChanged += AllDevices_CollectionChanged;
             _settings.HiddenAppsChanged += OnHiddenAppsChanged;
             _settings.HiddenDevicesChanged += OnHiddenDevicesChanged;
+            _settings.DeviceRenamesChanged += OnDeviceRenamesChanged;
             AllDevices_CollectionChanged(null, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
 
 // This timer is used to enable clicking on the tray icon while the flyout is open, and not causing a
@@ -260,6 +261,20 @@ private readonly Action _returnFocusToTray;
             else
             {
                 _currentDispatcher.BeginInvoke((Action)(RebuildRestoreHiddenDevicesMenu));
+            }
+        }
+
+        // DeviceNameText is a snapshot of Devices[0].DisplayName, so a rename doesn't
+        // touch the Devices collection itself and won't otherwise cause this to re-notify.
+        private void OnDeviceRenamesChanged()
+        {
+            if (_currentDispatcher.CheckAccess())
+            {
+                RaisePropertyChanged(nameof(DeviceNameText));
+            }
+            else
+            {
+                _currentDispatcher.BeginInvoke((Action)(() => RaisePropertyChanged(nameof(DeviceNameText))));
             }
         }
 
@@ -671,6 +686,7 @@ private readonly Action _returnFocusToTray;
                     _mainViewModel.VisibleDevices.CollectionChanged -= AllDevices_CollectionChanged;
                     _settings.HiddenAppsChanged -= OnHiddenAppsChanged;
                     _settings.HiddenDevicesChanged -= OnHiddenDevicesChanged;
+                    _settings.DeviceRenamesChanged -= OnDeviceRenamesChanged;
 
                     foreach (var device in Devices)
                     {
