@@ -59,6 +59,7 @@ namespace EarTrumpet
         private CliHandler _cliHandler;
         private DataModel.Audio.IAudioDeviceManager _deviceManager;
         private DataModel.UpdateService _updateService;
+        private NativeVolumeOsdSuppressor _nativeVolumeOsdSuppressor;
 
         public static AppSettings Settings { get; private set; }
         public static VolumeUndoService UndoService { get; } = new VolumeUndoService();
@@ -279,6 +280,24 @@ namespace EarTrumpet
                 CollectionViewModel.TrayPropertyChanged += RefreshTrayTooltipPresentation;
                 Settings.AppTooltipsChanged += () => Dispatcher.BeginInvoke((Action)RefreshTrayTooltipPresentation);
                 RefreshTrayTooltipPresentation(); // Update tooltip with real data
+
+                _nativeVolumeOsdSuppressor = new NativeVolumeOsdSuppressor(CollectionViewModel);
+                if (Settings.SuppressNativeOsdForRenamedDevices)
+                {
+                    _nativeVolumeOsdSuppressor.Start();
+                }
+                Settings.SuppressNativeOsdForRenamedDevicesChanged += () =>
+                {
+                    if (Settings.SuppressNativeOsdForRenamedDevices)
+                    {
+                        _nativeVolumeOsdSuppressor.Start();
+                    }
+                    else
+                    {
+                        _nativeVolumeOsdSuppressor.Stop();
+                    }
+                };
+                Exit += (_, __) => _nativeVolumeOsdSuppressor?.Dispose();
 
                 // Initialize FlyoutWindow now that audio is ready
                 _flyoutViewModel = new FlyoutViewModel(CollectionViewModel, () => _trayIcon.SetFocus(), Settings);

@@ -403,5 +403,45 @@ namespace EarTrumpet.Interop
         public static extern bool GetWindowPlacement(
             IntPtr hWnd,
             out WINDOWPLACEMENT lpwndpl);
+
+        public delegate void WinEventDelegate(
+            IntPtr hWinEventHook,
+            uint eventType,
+            IntPtr hwnd,
+            int idObject,
+            int idChild,
+            uint dwEventThread,
+            uint dwmsEventTime);
+
+        [DllImport("user32.dll", PreserveSig = true)]
+        public static extern IntPtr SetWinEventHook(
+            uint eventMin,
+            uint eventMax,
+            IntPtr hmodWinEventProc,
+            WinEventDelegate lpfnWinEventProc,
+            uint idProcess,
+            uint idThread,
+            uint dwFlags);
+
+        [DllImport("user32.dll", PreserveSig = true)]
+        public static extern bool UnhookWinEvent(IntPtr hWinEventHook);
+
+        [DllImport("user32.dll", PreserveSig = true)]
+        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        public const uint EVENT_OBJECT_SHOW = 0x8002;
+        public const uint WINEVENT_OUTOFCONTEXT = 0x0000;
+        public const int OBJID_WINDOW = 0;
+        public const int SW_HIDE = 0;
+        public const int SW_MINIMIZE = 6;
+        public const int SW_SHOWNA = 8;
+
+        [DllImport("user32.dll", PreserveSig = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool IsWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll", PreserveSig = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool IsWindowVisible(IntPtr hWnd);
     }
 }

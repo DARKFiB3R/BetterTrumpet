@@ -287,6 +287,28 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Native volume OSD suppression for renamed devices -->
+                <Border Style="{StaticResource SectionCardBorder}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                            <Border Style="{StaticResource SectionIconBorder}">
+                                <TextBlock Text="&#xE7F6;" FontFamily="Segoe MDL2 Assets" FontSize="18"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Foreground="White" />
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Windows Volume Popup" FontSize="15" FontWeight="SemiBold" />
+                                <TextBlock Text="Windows' own volume popup always shows a device's real name, not your BetterTrumpet rename. Hide it for renamed devices so only BetterTrumpet's own feedback shows."
+                                           Style="{StaticResource BodySubText}" FontSize="12" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <CheckBox HorizontalAlignment="Left"
+                                  Content="Hide it for renamed devices"
+                                  IsChecked="{Binding SuppressNativeOsdForRenamedDevices, Mode=TwoWay}" />
+                    </StackPanel>
+                </Border>
+
             </StackPanel>
         </DataTemplate>
         <!-- Performance Settings Page -->

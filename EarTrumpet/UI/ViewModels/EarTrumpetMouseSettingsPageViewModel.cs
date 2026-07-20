@@ -39,6 +39,13 @@ namespace EarTrumpet.UI.ViewModels
             set => _settings.ShowBalanceSlider = value;
         }
 
+        // Hide Windows' native volume OSD when it would show a renamed device's real name
+        public bool SuppressNativeOsdForRenamedDevices
+        {
+            get => _settings.SuppressNativeOsdForRenamedDevices;
+            set => _settings.SuppressNativeOsdForRenamedDevices = value;
+        }
+
         private readonly AppSettings _settings;
 
         public EarTrumpetMouseSettingsPageViewModel(AppSettings settings) : base(null)

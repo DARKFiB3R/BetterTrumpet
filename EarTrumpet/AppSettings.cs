@@ -39,6 +39,7 @@ namespace EarTrumpet
         public event Action HardMutedAppsChanged;
         public event Action ShowBalanceSliderChanged;
         public event Action DeviceRenamesChanged;
+        public event Action SuppressNativeOsdForRenamedDevicesChanged;
 
         private ISettingsBag _settings = StorageFactory.GetSettings();
         private const string HiddenAppEntriesJsonKey = "HiddenAppEntriesJson";
@@ -1118,6 +1119,21 @@ namespace EarTrumpet
         {
             get => _settings.Get("UseScrollWheelInTray", true);
             set => _settings.Set("UseScrollWheelInTray", value);
+        }
+
+        // Opt-in: hide Windows' native volume OSD when it would show a device's real
+        // (un-renamed) name instead of the local rename BT applied. Off by default since it
+        // hooks a system-wide window event - most users will never trigger the native OSD
+        // for a renamed device in the first place (BT's own scroll/drag paths don't trigger
+        // it at all; only genuine hardware volume keys or other tools that emulate them do).
+        public bool SuppressNativeOsdForRenamedDevices
+        {
+            get => _settings.Get("SuppressNativeOsdForRenamedDevices", false);
+            set
+            {
+                _settings.Set("SuppressNativeOsdForRenamedDevices", value);
+                SuppressNativeOsdForRenamedDevicesChanged?.Invoke();
+            }
         }
 
         public bool UseGlobalMouseWheelHook
