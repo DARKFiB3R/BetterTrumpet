@@ -49,6 +49,9 @@ namespace EarTrumpet
         private ErrorReporter _errorReporter;
         private MediaPopupWindow _mediaPopup;
         private System.Windows.Threading.DispatcherTimer _mediaPopupDelayTimer;
+        private System.Windows.Threading.DispatcherTimer _primaryClickDelayTimer;
+        private InputType _pendingPrimaryClickType;
+        private DateTime _lastPrimaryMouseClickTime = DateTime.MinValue;
         private Popup _trayHoverTooltipPopup;
         private Border _trayHoverTooltipBorder;
         private TextBlock _trayHoverTooltipText;
@@ -297,7 +300,7 @@ namespace EarTrumpet
             _mixerWindow = new WindowHolder(CreateMixerExperience);
             _settingsWindow = new WindowHolder(CreateSettingsExperience);
 
-            _trayIcon.PrimaryInvoke += (_, type) => _flyoutViewModel.OpenFlyout(type);
+            _trayIcon.PrimaryInvoke += OnTrayPrimaryInvoke;
             _trayIcon.SecondaryInvoke += (_, args) => _trayIcon.ShowContextMenu(GetTrayContextMenuItems(), args.Point);
             _trayIcon.TertiaryInvoke += (_, __) => CollectionViewModel.Default?.ToggleMute.Execute(null);
             _trayIcon.Scrolled += trayIconScrolled;
@@ -459,50 +462,18 @@ namespace EarTrumpet
         {
             if (_mediaPopup == null) return;
 
-            // Timer will be created on first Show() call - deferred initialization
+            // Timer will be created on first hover - deferred initialization
             _trayIcon.MouseHoverChanged += (_, isOver) =>
             {
                 if (!Settings.MediaPopupEnabled) return;
 
                 if (isOver)
                 {
-                    // Lazy-create timer on first hover
-                    if (_mediaPopupDelayTimer == null)
-                    {
-                        _mediaPopupDelayTimer = new System.Windows.Threading.DispatcherTimer
-                        {
-                            Interval = TimeSpan.FromSeconds(Settings.MediaPopupHoverDelay)
-                        };
+                    // When double-click activation is enabled, hovering alone shouldn't
+                    // pop it open - that's the whole point of the setting.
+                    if (Settings.MediaPopupUseDoubleClick) return;
 
-                        Settings.MediaPopupSettingsChanged += () =>
-                        {
-                            if (_mediaPopupDelayTimer != null)
-                            {
-                                _mediaPopupDelayTimer.Interval = TimeSpan.FromSeconds(Settings.MediaPopupHoverDelay);
-                            }
-                        };
-
-                        _mediaPopupDelayTimer.Tick += (s, e) =>
-                        {
-                            _mediaPopupDelayTimer.Stop();
-
-                            var mediaService = DataModel.MediaSessionService.Instance;
-                            if (Settings.MediaPopupShowOnlyWhenPlaying && !mediaService.IsMediaPlaying)
-                            {
-                                return;
-                            }
-
-                            if (!Settings.MediaPopupShowOnlyWhenPlaying && !mediaService.HasControllableSession)
-                            {
-                                return;
-                            }
-
-                            _mediaPopup.ShowPopup(_trayIcon.IconBounds);
-                            RefreshTrayTooltipPresentation();
-                        };
-
-                        Trace.WriteLine("MediaPopup: Timer created on first hover (lazy init)");
-                    }
+                    EnsureMediaPopupDelayTimer();
 
                     if (_mediaPopup.IsShowing)
                     {
@@ -525,6 +496,120 @@ namespace EarTrumpet
             {
                 RefreshTrayTooltipPresentation();
             };
+        }
+
+        // Windows' notify icon callback doesn't reliably deliver a distinct
+        // double-click message in sync with the two individual clicks that make it up
+        // (NIN_SELECT/WM_LBUTTONUP fires reliably for every click, but WM_LBUTTONDBLCLK
+        // is not consistently sent for tray icons under NOTIFYICON_VERSION_4). So
+        // instead of relying on a separate double-click signal, this measures the gap
+        // between successive clicks itself using the one event source that's always
+        // reliable: PrimaryInvoke, which fires immediately for every click.
+        private void OnTrayPrimaryInvoke(object sender, InputType type)
+        {
+            if (type != InputType.Mouse || !Settings.MediaPopupEnabled || !Settings.MediaPopupUseDoubleClick)
+            {
+                _flyoutViewModel.OpenFlyout(type);
+                return;
+            }
+
+            // A click that's closing an already-open flyout (light-dismiss) needs to
+            // reach OpenFlyout immediately - it has its own brief window to recognize
+            // "this click is the dismiss, absorb it" that's shorter than our
+            // double-click delay, so deferring this call would make the delayed call
+            // arrive too late and reopen the flyout we just closed. Only the "opening
+            // from idle" case benefits from waiting to see if a second click follows.
+            if (_flyoutViewModel.WasJustDismissedByClick)
+            {
+                _flyoutViewModel.OpenFlyout(type);
+                return;
+            }
+
+            var now = DateTime.UtcNow;
+            var sinceLastClick = now - _lastPrimaryMouseClickTime;
+            _lastPrimaryMouseClickTime = now;
+
+            if (sinceLastClick.TotalMilliseconds <= System.Windows.Forms.SystemInformation.DoubleClickTime)
+            {
+                // Second click of a double-click: cancel the flyout-open queued for the
+                // first click (never fire it - that's the flash we're avoiding) and
+                // treat this pair as the media popup's activation gesture instead.
+                _primaryClickDelayTimer?.Stop();
+                _lastPrimaryMouseClickTime = DateTime.MinValue; // don't chain into a 3rd click
+
+                if (_mediaPopup.IsShowing)
+                {
+                    _mediaPopup.StartHideTimer();
+                }
+                else
+                {
+                    TryShowMediaPopup();
+                }
+                return;
+            }
+
+            // First click of a possible pair: hold off opening the flyout until the
+            // double-click window passes without a second click showing up.
+            _pendingPrimaryClickType = type;
+
+            if (_primaryClickDelayTimer == null)
+            {
+                _primaryClickDelayTimer = new System.Windows.Threading.DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(System.Windows.Forms.SystemInformation.DoubleClickTime)
+                };
+                _primaryClickDelayTimer.Tick += (s, e) =>
+                {
+                    _primaryClickDelayTimer.Stop();
+                    _flyoutViewModel.OpenFlyout(_pendingPrimaryClickType);
+                };
+            }
+
+            _primaryClickDelayTimer.Stop();
+            _primaryClickDelayTimer.Start();
+        }
+
+        private void EnsureMediaPopupDelayTimer()
+        {
+            if (_mediaPopupDelayTimer != null) return;
+
+            _mediaPopupDelayTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(Settings.MediaPopupHoverDelay)
+            };
+
+            Settings.MediaPopupSettingsChanged += () =>
+            {
+                if (_mediaPopupDelayTimer != null)
+                {
+                    _mediaPopupDelayTimer.Interval = TimeSpan.FromSeconds(Settings.MediaPopupHoverDelay);
+                }
+            };
+
+            _mediaPopupDelayTimer.Tick += (s, e) =>
+            {
+                _mediaPopupDelayTimer.Stop();
+                TryShowMediaPopup();
+            };
+
+            Trace.WriteLine("MediaPopup: Timer created on first hover (lazy init)");
+        }
+
+        private void TryShowMediaPopup()
+        {
+            var mediaService = DataModel.MediaSessionService.Instance;
+            if (Settings.MediaPopupShowOnlyWhenPlaying && !mediaService.IsMediaPlaying)
+            {
+                return;
+            }
+
+            if (!Settings.MediaPopupShowOnlyWhenPlaying && !mediaService.HasControllableSession)
+            {
+                return;
+            }
+
+            _mediaPopup.ShowPopup(_trayIcon.IconBounds);
+            RefreshTrayTooltipPresentation();
         }
 
         private void trayIconScrolled(object _, int wheelDelta)

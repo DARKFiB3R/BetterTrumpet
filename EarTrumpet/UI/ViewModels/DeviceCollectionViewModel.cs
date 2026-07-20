@@ -38,6 +38,7 @@ namespace EarTrumpet.UI.ViewModels
             _settings.HiddenAppsChanged += OnHiddenAppsChanged;
             _settings.HiddenDevicesChanged += OnHiddenDevicesChanged;
             _settings.HardMutedAppsChanged += OnHardMutedAppsChanged;
+            _settings.UseVolumeTickSoundChanged += OnUseVolumeTickSoundChanged;
             _deviceManager = deviceManager;
             _deviceManager.DefaultChanged += OnDefaultChanged;
             _deviceManager.Devices.CollectionChanged += OnCollectionChanged;
@@ -152,6 +153,26 @@ namespace EarTrumpet.UI.ViewModels
         public int GetTotalHiddenDevicesCount()
         {
             return _settings.HiddenDevicesCount;
+        }
+
+        public void RenameDevice(DeviceViewModel device, string newName)
+        {
+            if (device == null)
+            {
+                return;
+            }
+
+            _settings.SetDeviceRename(device.Id, newName);
+        }
+
+        public void ResetDeviceName(DeviceViewModel device)
+        {
+            if (device == null)
+            {
+                return;
+            }
+
+            _settings.ClearDeviceRename(device.Id);
         }
 
         private void OnHiddenDevicesChanged()
@@ -293,6 +314,16 @@ namespace EarTrumpet.UI.ViewModels
         }
 
         private void OnHiddenAppsChanged()
+        {
+            RefreshAppVisibilityForAllDevices();
+        }
+
+        private void OnUseVolumeTickSoundChanged()
+        {
+            RefreshAppVisibilityForAllDevices();
+        }
+
+        private void RefreshAppVisibilityForAllDevices()
         {
             foreach (var device in AllDevices)
             {

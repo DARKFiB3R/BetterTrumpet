@@ -258,6 +258,21 @@
   <data name="SetAsDefaultDeviceText" xml:space="preserve">
     <value>Set as default device</value>
   </data>
+  <data name="RenameDeviceMenuText" xml:space="preserve">
+    <value>Rename device</value>
+  </data>
+  <data name="ResetDeviceNameMenuText" xml:space="preserve">
+    <value>Reset name</value>
+  </data>
+  <data name="RenameDeviceDialogTitle" xml:space="preserve">
+    <value>Rename device</value>
+  </data>
+  <data name="GenericSaveButtonText" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="GenericCancelButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
   <data name="RestoreHiddenDevices" xml:space="preserve">
     <value>Show hidden devices</value>
   </data>
@@ -1150,6 +1165,9 @@ Open [https://eartrumpet.app/jmp/fixfonts] now?</value>
   </data>
   <data name="SettingsHoverDelay" xml:space="preserve">
     <value>Hover delay</value>
+  </data>
+  <data name="SettingsMediaPopupUseDoubleClick" xml:space="preserve">
+    <value>Open with double-click instead of hovering</value>
   </data>
   <data name="SettingsVisualEffects" xml:space="preserve">
     <value>Visual Effects</value>

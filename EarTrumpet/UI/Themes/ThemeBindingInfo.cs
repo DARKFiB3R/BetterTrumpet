@@ -63,7 +63,10 @@ namespace EarTrumpet.UI.Themes
 
         private void Element_Loaded(object sender, RoutedEventArgs e)
         {
-            if (_element.TryGetTarget(out var element))
+            // Leaving() can run (nulling _element) before a Loaded that was already
+            // queued for this element gets delivered - ThemeChanged() below already
+            // guards against that same race, this just needed the same guard.
+            if ((_element != null) && _element.TryGetTarget(out var element))
             {
                 UnregisterLoaded(element);
                 ApplyValue(element);

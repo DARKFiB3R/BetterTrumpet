@@ -32,6 +32,13 @@ namespace EarTrumpet.UI.ViewModels
             set => _settings.UseVolumeTickSound = value;
         }
 
+        // Per-device L/R balance slider (only ever shows for 2-channel devices regardless)
+        public bool ShowBalanceSlider
+        {
+            get => _settings.ShowBalanceSlider;
+            set => _settings.ShowBalanceSlider = value;
+        }
+
         private readonly AppSettings _settings;
 
         public EarTrumpetMouseSettingsPageViewModel(AppSettings settings) : base(null)

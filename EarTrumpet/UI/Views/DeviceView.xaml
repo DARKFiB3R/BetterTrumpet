@@ -123,6 +123,8 @@
                                           Value="{Binding Device.Volume, Mode=TwoWay}" />
                         <TextBlock Grid.Column="2"
                                    Style="{StaticResource DeviceVolumeTextStyle}"
+                                   HorizontalAlignment="Right"
+                                   Margin="0,0,24,0"
                                    Text="{Binding Device.Volume, Mode=OneWay}" />
                     </Grid>
 
@@ -131,7 +133,7 @@
                             <Style TargetType="Grid">
                                 <Setter Property="Visibility" Value="Collapsed" />
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Device.IsBalanceSupported}" Value="True">
+                                    <DataTrigger Binding="{Binding Device.IsBalanceVisible}" Value="True">
                                         <Setter Property="Visibility" Value="Visible" />
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -180,6 +182,8 @@
 
                         <TextBlock Grid.Column="2"
                                    Style="{StaticResource DeviceVolumeTextStyle}"
+                                   HorizontalAlignment="Right"
+                                   Margin="0,0,24,0"
                                    Text="{Binding Device.Balance, Mode=OneWay, StringFormat={}{0:0}}" />
                     </Grid>
                 </Grid>

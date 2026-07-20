@@ -26,6 +26,11 @@ namespace EarTrumpet.UI.Controls
     {
         private const double SnapInZone = 4.0;
         private const double SnapOutThreshold = 10.0;
+        private const int SoundThrottleMs = 50; // Min time between sounds, matches VolumeSlider
+        private const double TickVolume = 0.5; // Balance isn't a loudness value, so ticks play at a fixed comfortable level
+
+        private double _lastSoundValue = double.NaN;
+        private DateTime _lastSoundTime = DateTime.MinValue;
 
         private bool _isDragging;
         private bool _isSnapped;
@@ -381,6 +386,37 @@ namespace EarTrumpet.UI.Controls
         {
             base.OnValueChanged(oldValue, newValue);
             UpdateFillGeometry();
+
+            // Play tick sound when value changes (only if user is interacting) —
+            // matches VolumeSlider's drag feedback behavior.
+            try
+            {
+                if (_isDragging && Math.Abs(newValue - oldValue) > 0.5)
+                {
+                    PlayBalanceTickSound(newValue);
+                }
+            }
+            catch { /* Ignore sound errors */ }
+        }
+
+        private void PlayBalanceTickSound(double newValue)
+        {
+            if (App.Settings?.UseVolumeTickSound != true)
+                return;
+
+            // Throttle sounds to avoid overwhelming audio feedback
+            var now = DateTime.UtcNow;
+            if ((now - _lastSoundTime).TotalMilliseconds < SoundThrottleMs)
+                return;
+
+            // Only play if value actually changed by a meaningful amount
+            if (!double.IsNaN(_lastSoundValue) && Math.Abs(newValue - _lastSoundValue) < 1)
+                return;
+
+            _lastSoundTime = now;
+            _lastSoundValue = newValue;
+
+            TickSoundPlayer.Play(TickVolume);
         }
 
         protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)

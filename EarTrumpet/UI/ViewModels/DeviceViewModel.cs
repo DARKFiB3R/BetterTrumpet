@@ -34,7 +34,12 @@ namespace EarTrumpet.UI.ViewModels
             Microphone,
         }
 
-        public override string DisplayName => _device.DisplayName;
+        public override string DisplayName => _settings?.GetDeviceRename(_device.Id) ?? _device.DisplayName;
+
+        // The device's real Windows name, unaffected by any custom rename - used to
+        // seed the rename dialog so it's clear what's being renamed from.
+        public string OriginalDisplayName => _device.DisplayName;
+        public bool HasCustomName => !string.IsNullOrEmpty(_settings?.GetDeviceRename(_device.Id));
         protected override bool IsDevice => true;
         public string AccessibleName => IsMuted ? Properties.Resources.AppOrDeviceMutedFormatAccessibleText.Replace("{Name}", DisplayName) :
             Properties.Resources.AppOrDeviceFormatAccessibleText.Replace("{Name}", DisplayName).Replace("{Volume}", Volume.ToString());
@@ -105,6 +110,11 @@ namespace EarTrumpet.UI.ViewModels
 
             _device.PropertyChanged += OnPropertyChanged;
             _device.Groups.CollectionChanged += OnCollectionChanged;
+            if (_settings != null)
+            {
+                _settings.ShowBalanceSliderChanged += OnShowBalanceSliderChanged;
+                _settings.DeviceRenamesChanged += OnDeviceRenamesChanged;
+            }
 
             // Balance only makes sense for a conventional stereo pair. Devices with a
             // different channel count (mono mics, 5.1/7.1 speaker sets, etc.) simply
@@ -134,6 +144,11 @@ namespace EarTrumpet.UI.ViewModels
         {
             _device.PropertyChanged -= OnPropertyChanged;
             _device.Groups.CollectionChanged -= OnCollectionChanged;
+            if (_settings != null)
+            {
+                _settings.ShowBalanceSliderChanged -= OnShowBalanceSliderChanged;
+                _settings.DeviceRenamesChanged -= OnDeviceRenamesChanged;
+            }
 
             if (_balanceChannels != null)
             {
@@ -145,6 +160,22 @@ namespace EarTrumpet.UI.ViewModels
         }
 
         public bool IsBalanceSupported => _balanceChannels != null;
+
+        // What DeviceView.xaml actually binds its Visibility DataTrigger to - support
+        // (channel count) is a fixed device property, but whether it's shown is also a
+        // user preference (Settings > Volume and Mouse > Show L/R balance slider).
+        public bool IsBalanceVisible => IsBalanceSupported && (_settings?.ShowBalanceSlider ?? true);
+
+        private void OnShowBalanceSliderChanged()
+        {
+            RaisePropertyChanged(nameof(IsBalanceVisible));
+        }
+
+        private void OnDeviceRenamesChanged()
+        {
+            RaisePropertyChanged(nameof(DisplayName));
+            RaisePropertyChanged(nameof(HasCustomName));
+        }
 
         public ICommand ResetBalance { get; }
 
@@ -367,8 +398,23 @@ namespace EarTrumpet.UI.ViewModels
             }
         }
 
+        // BetterTrumpet only ever opens its own audio session to play the volume tick sound.
+        // Windows keeps that session listed (Inactive) for the life of the process regardless
+        // of what the app does with it afterwards — same as every other app on the system — so
+        // there's no way to make it disappear once the tick sound has been enabled. Instead,
+        // only filter BetterTrumpet's own entry out of its own app list while the tick sound
+        // setting is off — if it's on, showing up like any other app that plays audio is fine.
+        private static readonly int s_currentProcessId = Process.GetCurrentProcess().Id;
+
+        private bool IsSelfSession(int processId) => processId == s_currentProcessId && _settings?.UseVolumeTickSound != true;
+
         private void AddSession(IAudioDeviceSession session, bool animateOnLoad)
         {
+            if (IsSelfSession(session.ProcessId))
+            {
+                return;
+            }
+
             if (_settings != null && _settings.IsAppHiddenForDevice(_device.Id, session.AppId, session.ExeName))
             {
                 return;
@@ -409,7 +455,8 @@ namespace EarTrumpet.UI.ViewModels
         {
             foreach (var app in Apps.ToArray())
             {
-                if (_settings != null && _settings.IsAppHiddenForDevice(_device.Id, app.AppId, app.ExeName))
+                if (IsSelfSession(app.ProcessId) ||
+                    (_settings != null && _settings.IsAppHiddenForDevice(_device.Id, app.AppId, app.ExeName)))
                 {
                     if (app is TemporaryAppItemViewModel temporaryApp)
                     {
@@ -422,6 +469,11 @@ namespace EarTrumpet.UI.ViewModels
 
             foreach (var session in _device.Groups)
             {
+                if (IsSelfSession(session.ProcessId))
+                {
+                    continue;
+                }
+
                 if (_settings != null && _settings.IsAppHiddenForDevice(_device.Id, session.AppId, session.ExeName))
                 {
                     continue;
@@ -469,6 +521,11 @@ namespace EarTrumpet.UI.ViewModels
 
         public void AppMovingToThisDevice(TemporaryAppItemViewModel app)
         {
+            if (IsSelfSession(app.ProcessId))
+            {
+                return;
+            }
+
             app.Expired += OnAppExpired;
 
             foreach (var childApp in app.ChildApps)

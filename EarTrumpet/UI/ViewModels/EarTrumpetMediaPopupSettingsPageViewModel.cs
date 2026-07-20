@@ -15,6 +15,21 @@ namespace EarTrumpet.UI.ViewModels
             }
         }
 
+        // Activate the popup by double-clicking the tray icon instead of hovering over it
+        public bool UseDoubleClick
+        {
+            get => _settings.MediaPopupUseDoubleClick;
+            set
+            {
+                _settings.MediaPopupUseDoubleClick = value;
+                RaisePropertyChanged(nameof(UseDoubleClick));
+                RaisePropertyChanged(nameof(IsHoverDelayEnabled));
+            }
+        }
+
+        // The hover delay only matters when hover is actually what triggers the popup
+        public bool IsHoverDelayEnabled => !UseDoubleClick;
+
         // Hover delay in seconds (displayed as slider 0.5 - 5)
         public double HoverDelay
         {

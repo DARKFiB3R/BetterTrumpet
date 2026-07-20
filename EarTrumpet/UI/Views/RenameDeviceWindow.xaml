@@ -1,0 +1,149 @@
+<Window x:Class="EarTrumpet.UI.Views.RenameDeviceWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:resx="clr-namespace:EarTrumpet.Properties"
+        Title="{Binding Title}"
+        Width="340"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/UI/Controls/OnboardingComponents.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- OnboardingPrimaryButton/OnboardingGhostButton are sized for the big
+                 onboarding wizard CTAs (MinWidth 126, chunky padding) - too large for
+                 a small Save/Cancel pair here, so this dialog gets its own compact
+                 versions using the same color resources for visual consistency. -->
+            <Style x:Key="CompactPrimaryButton" TargetType="Button">
+                <Setter Property="Background" Value="{StaticResource OnboardingAccent}" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="Padding" Value="14,6" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Root"
+                                    Background="{TemplateBinding Background}"
+                                    CornerRadius="6"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Root" Property="Background" Value="{StaticResource OnboardingAccentHover}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="CompactGhostButton" TargetType="Button">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{StaticResource OnboardingTextMuted}" />
+                <Setter Property="Padding" Value="14,6" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="BorderBrush" Value="{StaticResource OnboardingBorderSoft}" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Root"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="6"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Root" Property="Background" Value="{StaticResource OnboardingSurfaceElevated}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="CompactCloseButton" TargetType="Button">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{StaticResource OnboardingTextMuted}" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Padding" Value="4" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                                <TextBlock x:Name="Glyph"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Text="{TemplateBinding Content}"
+                                           Foreground="{TemplateBinding Foreground}" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Glyph" Property="Foreground" Value="{StaticResource OnboardingText}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Border Background="{StaticResource OnboardingBg}"
+            BorderBrush="{StaticResource OnboardingBorder}"
+            BorderThickness="1"
+            CornerRadius="12">
+        <DockPanel LastChildFill="True">
+            <Grid DockPanel.Dock="Top" Margin="14,12,10,0">
+                <TextBlock Text="{Binding Title}"
+                           Foreground="{StaticResource OnboardingText}"
+                           FontSize="15"
+                           FontWeight="SemiBold" />
+                <Button HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Content="&#x2715;"
+                        Click="CloseButton_Click"
+                        Style="{StaticResource CompactCloseButton}"
+                        Margin="0" />
+            </Grid>
+            <StackPanel Margin="14">
+                <TextBox Name="RenameDeviceTextBox"
+                         Text="{Binding DeviceName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{x:Null}"
+                         Background="{StaticResource OnboardingSurfaceElevated}"
+                         Foreground="{StaticResource OnboardingText}"
+                         BorderBrush="{StaticResource OnboardingBorderSoft}"
+                         BorderThickness="1"
+                         Padding="8,6"
+                         FontSize="13"
+                         Margin="0,10,0,14"
+                         Loaded="RenameDeviceTextBox_Loaded" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="{x:Static resx:Resources.GenericCancelButtonText}"
+                            IsCancel="True"
+                            Style="{StaticResource CompactGhostButton}"
+                            Command="{Binding Cancel}"
+                            Margin="0,0,8,0" />
+                    <Button Content="{x:Static resx:Resources.GenericSaveButtonText}"
+                            IsDefault="True"
+                            Style="{StaticResource CompactPrimaryButton}"
+                            Command="{Binding Save}" />
+                </StackPanel>
+            </StackPanel>
+        </DockPanel>
+    </Border>
+</Window>

@@ -1007,6 +1007,36 @@ namespace EarTrumpet.Properties {
             }
         }
 
+        public static string RenameDeviceMenuText {
+            get {
+                return ResourceManager.GetString("RenameDeviceMenuText", resourceCulture);
+            }
+        }
+
+        public static string ResetDeviceNameMenuText {
+            get {
+                return ResourceManager.GetString("ResetDeviceNameMenuText", resourceCulture);
+            }
+        }
+
+        public static string RenameDeviceDialogTitle {
+            get {
+                return ResourceManager.GetString("RenameDeviceDialogTitle", resourceCulture);
+            }
+        }
+
+        public static string GenericSaveButtonText {
+            get {
+                return ResourceManager.GetString("GenericSaveButtonText", resourceCulture);
+            }
+        }
+
+        public static string GenericCancelButtonText {
+            get {
+                return ResourceManager.GetString("GenericCancelButtonText", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Home.
         /// </summary>
@@ -2350,6 +2380,9 @@ namespace EarTrumpet.Properties {
         }
         public static string SettingsHoverDelay {
             get { return ResourceManager.GetString("SettingsHoverDelay", resourceCulture); }
+        }
+        public static string SettingsMediaPopupUseDoubleClick {
+            get { return ResourceManager.GetString("SettingsMediaPopupUseDoubleClick", resourceCulture); }
         }
         public static string SettingsOnlyWhenPlaying {
             get { return ResourceManager.GetString("SettingsOnlyWhenPlaying", resourceCulture); }

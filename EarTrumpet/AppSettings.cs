@@ -37,23 +37,29 @@ namespace EarTrumpet
         public event Action HiddenAppsChanged;
         public event Action HiddenDevicesChanged;
         public event Action HardMutedAppsChanged;
+        public event Action ShowBalanceSliderChanged;
+        public event Action DeviceRenamesChanged;
 
         private ISettingsBag _settings = StorageFactory.GetSettings();
         private const string HiddenAppEntriesJsonKey = "HiddenAppEntriesJson";
         private const string HiddenDeviceEntriesJsonKey = "HiddenDeviceEntriesJson";
         private const string HardMutedAppEntriesJsonKey = "HardMutedAppEntriesJson";
+        private const string DeviceRenameEntriesJsonKey = "DeviceRenameEntriesJson";
         private readonly object _hiddenAppsSync = new object();
         private readonly object _hiddenDevicesSync = new object();
         private readonly object _hardMutedAppsSync = new object();
+        private readonly object _deviceRenamesSync = new object();
         private bool _hiddenAppsLoaded;
         private bool _hiddenDevicesLoaded;
         private bool _hardMutedAppsLoaded;
+        private bool _deviceRenamesLoaded;
         private bool _hotkeyPressHandlerRegistered;
         private DateTime _lastQuickTrumpetHotkeyAt = DateTime.MinValue;
         private string _lastQuickTrumpetHotkey;
         private List<HiddenAppEntry> _hiddenAppEntries = new List<HiddenAppEntry>();
         private List<HiddenDeviceEntry> _hiddenDeviceEntries = new List<HiddenDeviceEntry>();
         private List<HardMutedAppEntry> _hardMutedAppEntries = new List<HardMutedAppEntry>();
+        private List<DeviceRenameEntry> _deviceRenameEntries = new List<DeviceRenameEntry>();
         private List<HotkeyData> _quickTrumpetHotkeys = new List<HotkeyData>();
 
         public class HiddenAppEntry
@@ -70,6 +76,13 @@ namespace EarTrumpet
             public string DeviceId { get; set; }
             public string DisplayName { get; set; }
             public DateTime HiddenAtUtc { get; set; }
+        }
+
+        public class DeviceRenameEntry
+        {
+            public string DeviceId { get; set; }
+            public string CustomName { get; set; }
+            public DateTime RenamedAtUtc { get; set; }
         }
 
         public class HardMutedAppEntry
@@ -924,6 +937,183 @@ namespace EarTrumpet
             return normalizedEntries;
         }
 
+        // Device Rename Methods - a purely local override of what BetterTrumpet
+        // displays for a device. Deliberately doesn't touch the device's actual
+        // PKEY_Device_FriendlyName in the registry, so it never needs elevated
+        // permissions and never affects Windows' own mixer or any other app.
+        public string GetDeviceRename(string deviceId)
+        {
+            var normalizedDeviceId = NormalizeHiddenKeyValue(deviceId);
+            if (string.IsNullOrEmpty(normalizedDeviceId))
+            {
+                return null;
+            }
+
+            lock (_deviceRenamesSync)
+            {
+                EnsureDeviceRenamesLoaded();
+                return _deviceRenameEntries.FirstOrDefault(entry => entry.DeviceId == normalizedDeviceId)?.CustomName;
+            }
+        }
+
+        public List<DeviceRenameEntry> GetDeviceRenames()
+        {
+            lock (_deviceRenamesSync)
+            {
+                EnsureDeviceRenamesLoaded();
+                return _deviceRenameEntries
+                    .OrderBy(entry => entry.CustomName)
+                    .Select(entry => new DeviceRenameEntry
+                    {
+                        DeviceId = entry.DeviceId,
+                        CustomName = entry.CustomName,
+                        RenamedAtUtc = entry.RenamedAtUtc,
+                    })
+                    .ToList();
+            }
+        }
+
+        public void SetDeviceRename(string deviceId, string customName)
+        {
+            var normalizedDeviceId = NormalizeHiddenKeyValue(deviceId);
+            if (string.IsNullOrEmpty(normalizedDeviceId))
+            {
+                return;
+            }
+
+            var trimmedName = customName?.Trim();
+            if (string.IsNullOrEmpty(trimmedName))
+            {
+                ClearDeviceRename(deviceId);
+                return;
+            }
+
+            bool changed = false;
+            lock (_deviceRenamesSync)
+            {
+                EnsureDeviceRenamesLoaded();
+
+                var existing = _deviceRenameEntries.FirstOrDefault(entry => entry.DeviceId == normalizedDeviceId);
+                if (existing != null)
+                {
+                    if (existing.CustomName != trimmedName)
+                    {
+                        existing.CustomName = trimmedName;
+                        existing.RenamedAtUtc = DateTime.UtcNow;
+                        changed = true;
+                    }
+                }
+                else
+                {
+                    _deviceRenameEntries.Add(new DeviceRenameEntry
+                    {
+                        DeviceId = normalizedDeviceId,
+                        CustomName = trimmedName,
+                        RenamedAtUtc = DateTime.UtcNow,
+                    });
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    SaveDeviceRenamesUnsafe();
+                }
+            }
+
+            if (changed)
+            {
+                DeviceRenamesChanged?.Invoke();
+            }
+        }
+
+        public void ClearDeviceRename(string deviceId)
+        {
+            var normalizedDeviceId = NormalizeHiddenKeyValue(deviceId);
+            if (string.IsNullOrEmpty(normalizedDeviceId))
+            {
+                return;
+            }
+
+            bool changed = false;
+            lock (_deviceRenamesSync)
+            {
+                EnsureDeviceRenamesLoaded();
+                changed = _deviceRenameEntries.RemoveAll(entry => entry.DeviceId == normalizedDeviceId) > 0;
+
+                if (changed)
+                {
+                    SaveDeviceRenamesUnsafe();
+                }
+            }
+
+            if (changed)
+            {
+                DeviceRenamesChanged?.Invoke();
+            }
+        }
+
+        private void EnsureDeviceRenamesLoaded()
+        {
+            if (_deviceRenamesLoaded)
+            {
+                return;
+            }
+
+            try
+            {
+                var json = _settings.Get(DeviceRenameEntriesJsonKey, "[]");
+                var loaded = Newtonsoft.Json.JsonConvert.DeserializeObject<List<DeviceRenameEntry>>(json) ?? new List<DeviceRenameEntry>();
+                _deviceRenameEntries = NormalizeDeviceRenameEntries(loaded);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"AppSettings EnsureDeviceRenamesLoaded failed: {ex.Message}");
+                _deviceRenameEntries = new List<DeviceRenameEntry>();
+            }
+
+            _deviceRenamesLoaded = true;
+        }
+
+        private void SaveDeviceRenamesUnsafe()
+        {
+            _settings.Set(DeviceRenameEntriesJsonKey, Newtonsoft.Json.JsonConvert.SerializeObject(_deviceRenameEntries));
+        }
+
+        private List<DeviceRenameEntry> NormalizeDeviceRenameEntries(List<DeviceRenameEntry> entries)
+        {
+            var dedup = new HashSet<string>(StringComparer.Ordinal);
+            var normalizedEntries = new List<DeviceRenameEntry>();
+
+            foreach (var entry in entries)
+            {
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                var normalizedDeviceId = NormalizeHiddenKeyValue(entry.DeviceId);
+                if (string.IsNullOrEmpty(normalizedDeviceId) || !dedup.Add(normalizedDeviceId))
+                {
+                    continue;
+                }
+
+                var trimmedName = entry.CustomName?.Trim();
+                if (string.IsNullOrEmpty(trimmedName))
+                {
+                    continue;
+                }
+
+                normalizedEntries.Add(new DeviceRenameEntry
+                {
+                    DeviceId = normalizedDeviceId,
+                    CustomName = trimmedName,
+                    RenamedAtUtc = entry.RenamedAtUtc,
+                });
+            }
+
+            return normalizedEntries;
+        }
+
         public bool UseScrollWheelInTray
         {
             get => _settings.Get("UseScrollWheelInTray", true);
@@ -1009,11 +1199,31 @@ namespace EarTrumpet
             set => _settings.Set("VolumeAnimationSpeed", value);
         }
 
+        public event Action UseVolumeTickSoundChanged;
+
         // Enable/disable volume tick sound effect
         public bool UseVolumeTickSound
         {
             get => _settings.Get("UseVolumeTickSound", true);
-            set => _settings.Set("UseVolumeTickSound", value);
+            set
+            {
+                _settings.Set("UseVolumeTickSound", value);
+                UseVolumeTickSoundChanged?.Invoke();
+            }
+        }
+
+        // Show the per-device L/R balance slider (only ever appears for devices with
+        // exactly 2 channels regardless of this setting - this just lets someone who
+        // doesn't want it hide it). Default on: preserves current behavior for people
+        // already using it, while giving everyone else an escape hatch.
+        public bool ShowBalanceSlider
+        {
+            get => _settings.Get("ShowBalanceSlider", true);
+            set
+            {
+                _settings.Set("ShowBalanceSlider", value);
+                ShowBalanceSliderChanged?.Invoke();
+            }
         }
 
         public bool MonkeyTickSoundUnlocked
@@ -1309,6 +1519,17 @@ namespace EarTrumpet
             set
             {
                 _settings.Set("MediaPopupEnabled", value);
+                MediaPopupSettingsChanged?.Invoke();
+            }
+        }
+
+        // Activate the popup by double-clicking the tray icon instead of hovering over it
+        public bool MediaPopupUseDoubleClick
+        {
+            get => _settings.Get("MediaPopupUseDoubleClick", false);
+            set
+            {
+                _settings.Set("MediaPopupUseDoubleClick", value);
                 MediaPopupSettingsChanged?.Invoke();
             }
         }

@@ -1,5 +1,6 @@
 using EarTrumpet.Extensibility.Hosting;
 using EarTrumpet.UI.Helpers;
+using EarTrumpet.UI.Views;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,9 +15,12 @@ namespace EarTrumpet.UI.ViewModels
         public string DisplayName { get; }
         public ObservableCollection<ToolbarItemViewModel> Toolbar { get; }
 
-        public ObservableCollection<object> Addons { get; }
+        // Always a real (possibly empty) collection, never null - so content like the
+        // inline rename box below can always be pushed into it even when no add-ons
+        // have contributed anything.
+        public ObservableCollection<object> Addons { get; } = new ObservableCollection<object>();
 
-        public bool IsApplicable => (Addons != null && Addons.Count > 0) || _hasCommands;
+        public bool IsApplicable => Addons.Count > 0 || _hasCommands;
 
         private readonly bool _hasCommands;
 
@@ -59,6 +63,30 @@ namespace EarTrumpet.UI.ViewModels
                 });
             }
 
+            // Add rename device option
+            menuItems.Add(new ContextMenuItem
+            {
+                DisplayName = Properties.Resources.RenameDeviceMenuText,
+                Command = new RelayCommand(() =>
+                {
+                    RequestClose.Invoke();
+                    ShowRenameDialog(mainViewModel, device);
+                }),
+            });
+
+            if (device.HasCustomName)
+            {
+                menuItems.Add(new ContextMenuItem
+                {
+                    DisplayName = Properties.Resources.ResetDeviceNameMenuText,
+                    Command = new RelayCommand(() =>
+                    {
+                        mainViewModel.ResetDeviceName(device);
+                        RequestClose.Invoke();
+                    }),
+                });
+            }
+
             if (device.HasHiddenApps)
             {
                 var hiddenEntries = mainViewModel.GetHiddenAppsForDevice(device.Id);
@@ -93,7 +121,10 @@ namespace EarTrumpet.UI.ViewModels
             var contentItems = AddonManager.Host.DeviceContentItems;
             if (contentItems != null)
             {
-                Addons = new ObservableCollection<object>(contentItems.Select(a => a.GetContentForDevice(device.Id, () => RequestClose.Invoke())).Where(a => a != null).ToArray());
+                foreach (var addon in contentItems.Select(a => a.GetContentForDevice(device.Id, () => RequestClose.Invoke())).Where(a => a != null))
+                {
+                    Addons.Add(addon);
+                }
 
                 var addonMenuItems = contentItems.SelectMany(a => a.GetContextMenuItemsForDevice(device.Id)).Where(m => m != null).ToList();
                 if (addonMenuItems.Any())
@@ -117,5 +148,13 @@ namespace EarTrumpet.UI.ViewModels
         }
 
         public void Closing() { }
+
+        private static void ShowRenameDialog(DeviceCollectionViewModel mainViewModel, DeviceViewModel device)
+        {
+            var renameViewModel = new RenameDeviceViewModel(mainViewModel, device);
+            var window = new RenameDeviceWindow { DataContext = renameViewModel };
+            renameViewModel.RequestClose += () => window.Close();
+            window.Show();
+        }
     }
 }

@@ -27,6 +27,13 @@ namespace EarTrumpet.UI.ViewModels
         public bool CanExpand => _mainViewModel.VisibleDevices.Count > 1;
         public string DeviceNameText => Devices.Count > 0 ? Devices[0].DisplayName : null;
         public FlyoutViewState State { get; private set; }
+
+        // True for a brief window after a click-triggered dismiss - see the matching
+        // guard in OpenFlyout(). Callers that might delay before calling OpenFlyout
+        // (e.g. tray double-click disambiguation) should check this first and, if
+        // true, call OpenFlyout immediately instead of delaying, or the guard's
+        // window will have already passed by the time the delayed call arrives.
+        public bool WasJustDismissedByClick => (DateTime.UtcNow - _lastDeactivatedAt) < TimeSpan.FromMilliseconds(300);
         public ObservableCollection<DeviceViewModel> Devices { get; private set; }
         public ICommand ExpandCollapse { get; private set; }
         public ICommand TogglePin { get; private set; }
