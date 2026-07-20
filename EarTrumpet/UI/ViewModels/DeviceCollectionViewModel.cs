@@ -494,6 +494,14 @@ namespace EarTrumpet.UI.ViewModels
                     deviceName = Default.DisplayName;
                 }
 
+                // A local rename override should take priority over the registry-derived
+                // description/enumerator name, otherwise the tooltip shows the real device
+                // name even after the user has renamed it.
+                if (Default.HasCustomName)
+                {
+                    deviceName = Default.DisplayName;
+                }
+
                 // Device name could be null in transient error cases
                 if (deviceName == null)
                 {
